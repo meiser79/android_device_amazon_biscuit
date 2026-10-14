@@ -50,6 +50,10 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     hwcomposer.biscuit
 
+# Headless HOME; its overrides drop the launchers and user-facing apps.
+PRODUCT_PACKAGES += \
+    BiscuitEmptyLauncher
+
 # Fstab (slotted amonet v2 layout; overrides the mt8163-common legacy fstab)
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/fstab.mt8163:$(TARGET_COPY_OUT_VENDOR)/etc/fstab.mt8163 \

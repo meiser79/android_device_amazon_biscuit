@@ -120,6 +120,9 @@ adb sideload lineage-18.1-*-biscuit.zip
 - **CLI**: `/system/bin/biscuit_service` (`volume`, `mute`/`mic`,
   `countdown`, `bt pair|off`, `wifi on|off|connect`), unchanged from CM14.
 - **Wi-Fi** runs as STA only; the connsys WMT/PSM/BTIF threads run SCHED_FIFO.
+- **Apps**: `BiscuitEmptyLauncher` is a black HOME activity (Android needs one
+  to finish booting). Its `overrides` drop the launchers, setup wizard, updater,
+  user apps, keyboard, wallpapers, themes and printing from the image.
 
 ## Status
 
