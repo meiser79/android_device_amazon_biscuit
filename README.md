@@ -95,8 +95,9 @@ adb sideload lineage-18.1-*-biscuit.zip
 - **Radio**: MT8163 connsys like douglas/karnak: `mt66xx` kernel modules,
   `libbt-vendor`, `libwifi-hal-mt66xx` and `lib_driver_cmd_mt66xx` from
   `hardware/mediatek/mt66xx`, and Biscuit's stock `wmt_loader`/`wmt_launcher`.
-- **Display**: none. `hwcomposer.biscuit` is a headless HWC 1.1 (software
-  vsync, size from `debug.biscuit.hwc.size`, default 320x320) wrapped by the
+- **Display**: none. `hwcomposer.biscuit` is a headless HWC 1.1 with one
+  1x1 primary display and software vsync (`debug.biscuit.hwc.size=WxH`
+  overrides the size for debugging), wrapped by the
   composer 2.1 passthrough service. The stock HWC is 1.0, which
   `HWC2On1Adapter` rejects.
 - **Recovery**: `recovery` holds amonet's TWRP. `init.target.rc` bind-mounts

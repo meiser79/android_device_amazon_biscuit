@@ -13,8 +13,10 @@
  * no fbdev.
  *
  * Behaviour:
- *   - one always-connected primary display, size from debug.biscuit.hwc.size
- *     ("WxH", default 320x320), 60 Hz, 213 dpi (ACONFIGURATION_DENSITY_TV)
+ *   - one always-connected 1x1 primary display, 60 Hz, 213 dpi
+ *     (ACONFIGURATION_DENSITY_TV). Nothing is shown, so 1x1 keeps the
+ *     framebuffer target and window buffers tiny on a 512 MB device. debug.biscuit.hwc.size ("WxH") overrides it for debugging
+ *     (screenrecord, screencap).
  *   - no external display (disp 1 reports an error, i.e. "not connected")
  *   - prepare() marks every layer HWC_FRAMEBUFFER, so SurfaceFlinger composes
  *     everything with GLES (software GL is fine) into the framebuffer target
@@ -45,8 +47,8 @@
 
 namespace {
 
-const int kDefaultWidth = 320;
-const int kDefaultHeight = 320;
+const int kDefaultWidth = 1;
+const int kDefaultHeight = 1;
 const int kMaxDimension = 4096;
 const int64_t kVsyncPeriodNs = 16666666;  // 60 Hz
 const int32_t kDpiMilli = 213000;         // ACONFIGURATION_DENSITY_TV, in 1/1000 dpi
