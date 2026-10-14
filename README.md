@@ -102,24 +102,48 @@ adb sideload lineage-18.1-*-biscuit.zip
 - **Recovery**: `recovery` holds amonet's TWRP. `init.target.rc` bind-mounts
   `/system/bin/true` over `install-recovery.sh`, so Android never replaces it.
 
+## Headless features
+
+- **Audio**: `audio.primary.biscuit` runs the Fire OS 6 (Android 7.1)
+  `audio.primary_amazon.mt8163.so` under the Android 11 HAL ABI and switches
+  the TLV320DAC3203 speaker route and amplifier around playback. Missing
+  legacy symbols come from `libbiscuit_audio_shim` and the amazon-oss shims
+  (`blob_fixup` in `extract-files.sh`). The HAL mutes the microphone itself
+  (GPIO87); its 3.18 sysfs path is rewritten to `/dev/biscuit_mt_gpio`.
+- **Bluetooth speaker**: A2DP sink and AVRCP controller only; BiscuitService
+  answers pairing requests (PIN `0000` or just-works) and connects A2DP sink
+  after bonding.
+- **LED ring and buttons**: `biscuit-ledd` drives the IS31FL3236 ring,
+  BiscuitService mirrors the music volume on it, and `biscuit-keyd` turns the
+  microphone button (`KEY_MUTE`) into a mute toggle.
+- **CLI**: `/system/bin/biscuit_service` (`volume`, `mute`/`mic`,
+  `countdown`, `bt pair|off`, `wifi on|off|connect`), unchanged from CM14.
+- **Wi-Fi** runs as STA only; the connsys WMT/PSM/BTIF threads run SCHED_FIFO.
+
 ## Status
 
 Verified on the host:
 
 - The kernel builds (`Image.gz-dtb`), and the `mt66xx` common, Wi-Fi and BT
   modules build against it.
-- Host tests pass for the bootargs allowlist, amonet slot parsing and the OTA
-  write-target checks.
+- Host tests pass for the bootargs allowlist, amonet slot parsing, the OTA
+  write-target checks, the headless HWC (Android 11 headers) and
+  `biscuit-keyd`.
+- The audio wrapper compiles for arm32 against Android 11 headers with its
+  struct-layout asserts; the shim exports exactly the symbols the blobs
+  import; BiscuitService compiles against the Android 11 API signatures it
+  uses.
+- `extract-files.sh --only-target` extracts all 48 blobs and applies every
+  fixup.
 
 Not verified yet (needs a LineageOS 18.1 build and the device):
 
 - Biscuit's LK booting an arm64 kernel (`bootopt=64S3,32N2,64N2` from
   mt8163-common).
 - Mali GPU (Fire OS 6 disables it on Biscuit).
-- Fire OS 6 `wmt_loader`/`wmt_launcher` and `WIFI_RAM_CODE_8163` with the
-  Fire OS 7-era `mt66xx` modules. Fallback: the same files from the karnak dump.
+- The Fire OS 6 connsys userspace and audio HAL on the 4.9 kernel.
 - `system.img` size against the 768 MiB `system` partition.
 
-Not ported yet: audio (TLV320 ADC/DAC through `audio.primary.amazon_wrapper`),
-the LED ring daemon, the `amz_priv` mic-privacy driver and the CM14 connsys
-RT-priority tuning.
+Not ported on purpose: `amz_priv` (it would toggle the microphone a second
+time from the kernel), the lower connsys PSM threshold (compiled into the
+amazon-oss module), Amazon's AEC preload, and CM14's mDNS hostname patch.
