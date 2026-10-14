@@ -88,5 +88,10 @@ android_app {
         "QuickAccessWallet",
         "SimAppDialog",
         "WAPPushManager",
+
+        // Space: system is 768 MiB, and only en_US/de_DE are built (the
+        // font loader skips missing files).
+        "NotoSansCJK-Regular.ttc",
+        "NotoSerifCJK-Regular.ttc",
     ],
 }
