@@ -1,0 +1,31 @@
+#
+# SPDX-FileCopyrightText: 2026 The LineageOS Project
+# SPDX-License-Identifier: Apache-2.0
+#
+
+on init
+    # The recovery partition holds amonet v2 TWRP. Never let
+    # vendor_flash_recovery replace it with the Lineage recovery.
+    mount none /system/bin/true /vendor/bin/install-recovery.sh bind
+
+# MT8163 connsys: the mt66xx modules are loaded by vendor.insmod_sh
+# (init.insmod.cfg); wmt_loader initializes WMT, wmt_launcher downloads
+# the connsys patches and keeps the STP channel up.
+on property:sys.all.modules.ready=1
+    start wmt_loader
+
+on property:init.svc.wmt_loader=stopped
+    start wmt_launcher
+
+service wmt_loader /vendor/bin/wmt_loader
+    class core
+    user root
+    group root system
+    oneshot
+    disabled
+
+service wmt_launcher /vendor/bin/wmt_launcher -p /vendor/firmware/
+    class core
+    user system
+    group system
+    disabled

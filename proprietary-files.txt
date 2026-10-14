@@ -1,0 +1,10 @@
+# Pinned blobs from Amazon Echo Dot (2nd gen) Fire OS 6.5.7.4
+# (update-kindle-biscuit_puffin-NS6574_user_7623_0013121734532.bin)
+
+# Connectivity (MT8163 connsys)
+system/vendor/bin/wmt_launcher:vendor/bin/wmt_launcher|ce28f50320d23bcdaca6d326a9d7cc1f85846ff7
+system/vendor/bin/wmt_loader:vendor/bin/wmt_loader|b8d30ff16ae382659108eda70038e021d0b29d5d
+system/vendor/firmware/ROMv2_lm_patch_1_0_hdr.bin:vendor/firmware/ROMv2_lm_patch_1_0_hdr.bin|19bc3ce42284110a05a10d73a9951b09185d14d0
+system/vendor/firmware/ROMv2_lm_patch_1_1_hdr.bin:vendor/firmware/ROMv2_lm_patch_1_1_hdr.bin|f8d6a499a3686c0fec33aa31696655bd62f72c18
+system/vendor/firmware/WIFI_RAM_CODE_8163:vendor/firmware/WIFI_RAM_CODE_8163|5a6a6c2ae1111130921d207e803ddd2212669879
+system/vendor/firmware/WMT_SOC.cfg:vendor/firmware/WMT_SOC.cfg|8fdddd8371ff714167a732390cf60a5d05c890dd

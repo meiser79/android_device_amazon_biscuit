@@ -1,0 +1,2 @@
+# Display (headless HWC 1.1 instead of the stock HWC 1.0 hwcomposer.mt8163.so)
+ro.hardware.hwcomposer=biscuit

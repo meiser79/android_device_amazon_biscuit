@@ -1,0 +1,22 @@
+//
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+// Headless HWC 1.1, selected with ro.hardware.hwcomposer=biscuit. The stock
+// hwcomposer.mt8163.so declares HWC 1.0, which HWC2On1Adapter rejects.
+cc_library_shared {
+    name: "hwcomposer.biscuit",
+    relative_install_path: "hw",
+    vendor: true,
+    srcs: ["hwcomposer.cpp"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+    header_libs: ["libhardware_headers"],
+    shared_libs: [
+        "libcutils",
+        "liblog",
+    ],
+}
