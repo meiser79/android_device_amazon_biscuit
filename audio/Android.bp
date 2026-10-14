@@ -1,0 +1,33 @@
+//
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+cc_library_shared {
+    name: "audio.primary.biscuit",
+    relative_install_path: "hw",
+    vendor: true,
+    srcs: ["audio_hw.c"],
+    header_libs: ["libhardware_headers"],
+    shared_libs: [
+        "libhardware",
+        "liblog",
+        "libtinyalsa",
+    ],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wno-unused-parameter",
+    ],
+}
+
+cc_library_shared {
+    name: "libbiscuit_audio_shim",
+    vendor: true,
+    srcs: ["biscuit_audio_shim.cpp"],
+    shared_libs: ["libtinyalsa"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}

@@ -1,0 +1,54 @@
+//
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+// LED ring daemon (IS31FL3236 frame/boot_animation sysfs) and its client.
+cc_binary {
+    name: "biscuit-ledd",
+    srcs: ["biscuit-ledd.cpp"],
+    cflags: ["-Wall", "-Werror"],
+    init_rc: ["biscuit-ledd.rc"],
+}
+
+cc_binary {
+    name: "biscuit-ledctl",
+    srcs: ["biscuit-ledctl.cpp"],
+    cflags: ["-Wall", "-Werror"],
+}
+
+cc_binary {
+    name: "i2c-poke",
+    srcs: ["i2c-poke.cpp"],
+    cflags: ["-Wall", "-Werror"],
+}
+
+// Microphone button: KEY_MUTE -> BiscuitService mute toggle.
+cc_binary {
+    name: "biscuit-keyd",
+    srcs: ["biscuit-keyd.c"],
+    cflags: ["-Wall", "-Werror"],
+    init_rc: ["biscuit-keyd.rc"],
+}
+
+sh_binary {
+    name: "biscuit_service",
+    src: "biscuit_service",
+}
+
+android_app {
+    name: "BiscuitService",
+    srcs: [
+        "app/src/**/*.java",
+        "app/src/**/*.aidl",
+    ],
+    aidl: {
+        local_include_dirs: ["app/src"],
+    },
+    manifest: "app/AndroidManifest.xml",
+    certificate: "platform",
+    platform_apis: true,
+    optimize: {
+        enabled: false,
+    },
+}

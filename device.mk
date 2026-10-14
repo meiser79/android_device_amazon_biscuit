@@ -9,6 +9,32 @@ $(call inherit-product, frameworks/native/build/phone-xhdpi-512-dalvik-heap.mk)
 PRODUCT_AAPT_CONFIG := normal
 PRODUCT_AAPT_PREF_CONFIG := mdpi
 
+# Audio
+# audio.primary.biscuit runs the Fire OS 6 HAL (audio.primary_amazon.mt8163)
+# under the Android 11 ABI; see audio/audio_hw.c.
+PRODUCT_PACKAGES += \
+    android.hardware.audio@2.0-impl \
+    android.hardware.audio.effect@2.0-impl \
+    audio.primary.biscuit \
+    libbinder_shim \
+    libbiscuit_audio_shim \
+    libtinyalsa_shim
+
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/audio/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml
+
+# Biscuit service: LED ring, microphone button and the biscuit_service CLI
+PRODUCT_PACKAGES += \
+    BiscuitService \
+    biscuit-keyd \
+    biscuit-ledctl \
+    biscuit-ledd \
+    biscuit_service \
+    i2c-poke
+
+PRODUCT_COPY_FILES += \
+    $(call find-copy-subdir-files,*.animation,$(LOCAL_PATH)/biscuit-service/animations,$(TARGET_COPY_OUT_SYSTEM)/etc/biscuit-ledd)
+
 # Bluetooth
 PRODUCT_PACKAGES += \
     android.hardware.bluetooth@1.0-service \
@@ -31,7 +57,12 @@ PRODUCT_COPY_FILES += \
 
 # Init scripts
 PRODUCT_PACKAGES += \
+    init.biscuit.connsys.sh \
     init.target.biscuit.rc
+
+# Keylayout (microphone and action buttons)
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/keylayout/mtk-kpd.kl:$(TARGET_COPY_OUT_VENDOR)/usr/keylayout/mtk-kpd.kl
 
 # Kernel modules
 PRODUCT_COPY_FILES += \
@@ -41,6 +72,13 @@ PRODUCT_PACKAGES += \
     mt66xx_bt \
     mt66xx_common \
     mt66xx_wlan
+
+# Overlays (Bluetooth: A2DP sink speaker, no source/PAN)
+DEVICE_PACKAGE_OVERLAYS += \
+    $(LOCAL_PATH)/overlay
+
+PRODUCT_ENFORCE_RRO_EXCLUDED_OVERLAYS += \
+    $(LOCAL_PATH)/overlay/packages/apps/Bluetooth
 
 # Screen
 TARGET_SCREEN_DENSITY := 213
@@ -64,6 +102,11 @@ PRODUCT_PACKAGES += \
 
 PRODUCT_COPY_FILES += \
     $(call find-copy-subdir-files,*,$(LOCAL_PATH)/configs/wifi/,$(TARGET_COPY_OUT_VENDOR)/etc/wifi)
+
+# STA only: replaces the wifi.direct feature that mt8163-common declares
+# (the first PRODUCT_COPY_FILES entry for a destination wins).
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/permissions/android.hardware.wifi.direct.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.direct.xml
 
 # Inherit from mt8163-common
 $(call inherit-product, device/amazon/mt8163-common/mt8163.mk)
