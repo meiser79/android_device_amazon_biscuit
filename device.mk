@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-$(call inherit-product, frameworks/native/build/phone-xhdpi-512-dalvik-heap.mk)
+$(call inherit-product, frameworks/native/build/phone-hdpi-512-dalvik-heap.mk)
 
 # AAPT
 PRODUCT_AAPT_CONFIG := normal
