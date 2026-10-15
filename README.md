@@ -110,7 +110,9 @@ adb sideload lineage-18.1-*-biscuit.zip
   the TLV320DAC3203 speaker route and amplifier around playback. Missing
   legacy symbols come from `libbiscuit_audio_shim` and the amazon-oss shims
   (`blob_fixup` in `extract-files.sh`). The HAL also drives GPIO87; its 3.18
-  sysfs path is rewritten to `/dev/biscuit_mt_gpio`.
+  sysfs path is rewritten to `/dev/biscuit_mt_gpio`. Microphone and voice
+  recognition capture get the AOSP/WebRTC AGC (`configs/audio/audio_effects.xml`),
+  as on CM14.
 - **Bluetooth speaker**: A2DP sink and AVRCP controller only; BiscuitService
   answers pairing requests (PIN `0000` or just-works) and connects A2DP sink
   after bonding.
@@ -124,6 +126,13 @@ adb sideload lineage-18.1-*-biscuit.zip
   under `/dev/biscuit_privacy` (the keypad's `amz_privacy` sysfs group).
 - **LED ring**: `biscuit-ledd` drives the IS31FL3236 ring, and BiscuitService
   mirrors the music volume on it.
+- **Ambient light**: `sensors.biscuit` (sensors HAL 1.3) reports the
+  TSL2584TSV through IIO `illuminance0_input` or, on boards with a TSL2540,
+  its i2c0 sysfs `als_lux` (powered through `als_power_state`).
+- **Memory**: KSM merges identical pages (CM14's settings), and the boot
+  animation is off (`debug.sf.nobootanimation=1`).
+- **Debugging**: `/dev/i2c-*` (for `i2c-poke`), `/sys/class/gpio`, and
+  `tinymix`/`tinyplay`/`tinycap`/`tinypcminfo` on userdebug builds.
 - **CLI**: `/system/bin/biscuit_service` (`volume`, `mute`/`mic`,
   `countdown`, `bt pair|off`, `wifi on|off|connect`), unchanged from CM14.
 - **Wi-Fi** runs as STA only; the connsys WMT/PSM/BTIF threads run SCHED_FIFO.
@@ -138,8 +147,9 @@ Verified on the host:
 - The kernel builds (`Image.gz-dtb`), and the `mt66xx` common, Wi-Fi and BT
   modules build against it.
 - Host tests pass for the bootargs allowlist, amonet slot parsing, the OTA
-  write-target checks, the headless HWC (Android 11 headers) and
-  `biscuit-privacyd`.
+  write-target checks, the headless HWC (Android 11 headers),
+  `biscuit-privacyd` and `sensors.biscuit` (both light sensor sources,
+  ASan/UBSan).
 - The audio wrapper compiles for arm32 against Android 11 headers with its
   struct-layout asserts; the shim exports exactly the symbols the blobs
   import; BiscuitService compiles against the Android 11 API signatures it

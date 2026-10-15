@@ -6,3 +6,8 @@ persist.bluetooth.enablenewavrcp=false
 
 # Display (headless HWC 1.1 instead of the stock HWC 1.0 hwcomposer.mt8163.so)
 ro.hardware.hwcomposer=biscuit
+# The boot animation only costs memory on the 1x1 headless display
+debug.sf.nobootanimation=1
+
+# Sensors (ambient light only)
+ro.hardware.sensors=biscuit

@@ -21,6 +21,7 @@ PRODUCT_PACKAGES += \
     libtinyalsa_shim
 
 PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/audio/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
     $(LOCAL_PATH)/configs/audio/audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_policy_configuration.xml
 
 # Biscuit service: LED ring, microphone button and the biscuit_service CLI
@@ -49,6 +50,15 @@ PRODUCT_COPY_FILES += \
 # composer 2.1 passthrough service wraps with HWC2On1Adapter.
 PRODUCT_PACKAGES += \
     hwcomposer.biscuit
+
+# Ambient light sensor (TSL2584TSV over IIO or TSL2540 over input)
+PRODUCT_PACKAGES += \
+    sensors.biscuit
+
+# Audio debugging, as on CM14 (tinymix and tinycap come from the common tree)
+PRODUCT_PACKAGES_DEBUG += \
+    tinypcminfo \
+    tinyplay
 
 # Headless HOME; its overrides drop the launchers and user-facing apps.
 PRODUCT_PACKAGES += \

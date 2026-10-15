@@ -8,6 +8,12 @@ on init
     # vendor_flash_recovery replace it with the Lineage recovery.
     mount none /system/bin/true /vendor/bin/install-recovery.sh bind
 
+on boot
+    # KSM, as on CM14: merging identical pages helps on 512 MB of RAM.
+    write /sys/kernel/mm/ksm/pages_to_scan 100
+    write /sys/kernel/mm/ksm/sleep_millisecs 250
+    write /sys/kernel/mm/ksm/run 1
+
 on early-boot
     # The Fire OS audio HAL mutes the microphone (GPIO87) through the 3.18
     # pinctrl path; blob_fixup points it at this link to the 4.9 node.
@@ -21,6 +27,9 @@ on early-boot
     symlink /sys/devices/platform/soc/10010000.keypad/amz_privacy /dev/biscuit_privacy
     chown root audio /sys/devices/platform/soc/10010000.keypad/amz_privacy/privacy_trigger
     chmod 0664 /sys/devices/platform/soc/10010000.keypad/amz_privacy/privacy_trigger
+
+    # sensors.biscuit powers the TSL2540 ambient light sensor (i2c0 0x39)
+    chown system system /sys/bus/i2c/devices/0-0039/als_power_state
 
 # MT8163 connsys: the mt66xx modules are loaded by vendor.insmod_sh
 # (init.insmod.cfg); wmt_loader initializes WMT, wmt_launcher downloads
