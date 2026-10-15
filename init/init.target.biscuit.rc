@@ -15,6 +15,13 @@ on early-boot
     chown root audio /sys/devices/platform/soc/10005000.pinctrl/mt_gpio
     chmod 0664 /sys/devices/platform/soc/10005000.pinctrl/mt_gpio
 
+    # amz_priv: the kernel mutes GPIO87 on the microphone button. The audio
+    # HAL wrapper enters privacy through privacy_trigger and refuses to
+    # unmute while privacy_state is 1; only the button leaves privacy.
+    symlink /sys/devices/platform/soc/10010000.keypad/amz_privacy /dev/biscuit_privacy
+    chown root audio /sys/devices/platform/soc/10010000.keypad/amz_privacy/privacy_trigger
+    chmod 0664 /sys/devices/platform/soc/10010000.keypad/amz_privacy/privacy_trigger
+
 # MT8163 connsys: the mt66xx modules are loaded by vendor.insmod_sh
 # (init.insmod.cfg); wmt_loader initializes WMT, wmt_launcher downloads
 # the connsys patches and keeps the STP channel up.

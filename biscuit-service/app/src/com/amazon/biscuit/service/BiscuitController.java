@@ -16,6 +16,7 @@ import android.net.wifi.WifiManager;
 import android.util.Log;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -48,6 +49,8 @@ final class BiscuitController {
     private static final String EXTRA_COUNTDOWN_TOTAL_MS = PKG + ".EXTRA_COUNTDOWN_TOTAL_MS";
 
     private static final String SOCKET = "biscuit-ledd";
+    /* amz_priv: the kernel owns microphone privacy (init.target.biscuit.rc). */
+    private static final String PRIVACY_STATE = "/dev/biscuit_privacy/privacy_state";
     /* setScanMode() takes milliseconds since Android 11. */
     private static final long PAIRING_MODE_MILLIS = 300_000L;
 
@@ -81,7 +84,7 @@ final class BiscuitController {
             case COUNTDOWN_CLEAR: send("CLEAR"); break;
             case MIC_MUTE_ON: setMicMuted(true); break;
             case MIC_MUTE_OFF: setMicMuted(false); break;
-            case MIC_MUTE_TOGGLE: setMicMuted(!audio().isMicrophoneMute()); break;
+            case MIC_MUTE_TOGGLE: setMicMuted(!isMicMuted()); break;
             default: return false;
         }
         return true;
@@ -91,8 +94,22 @@ final class BiscuitController {
         return mContext.getSystemService(AudioManager.class);
     }
 
+    /** Kernel privacy state; falls back to Android's flag without amz_priv. */
+    private boolean isMicMuted() {
+        try (FileInputStream in = new FileInputStream(PRIVACY_STATE)) {
+            int c = in.read();
+            if (c == '0' || c == '1') return c == '1';
+        } catch (IOException ignored) {
+        }
+        return audio().isMicrophoneMute();
+    }
+
+    /** Muting always works; while the kernel is private, only the button unmutes. */
     void setMicMuted(boolean muted) {
         audio().setMicrophoneMute(muted);
+        if (!muted && isMicMuted()) {
+            Log.i(TAG, "microphone privacy is on; press the microphone button to unmute");
+        }
     }
 
     void updateVolumeLed(int stream, int current) {

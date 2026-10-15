@@ -19,8 +19,10 @@
 #define LOG_TAG "audio.primary.biscuit"
 
 #include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <hardware/audio.h>
 #include <hardware/hardware.h>
@@ -30,6 +32,10 @@
 #include "audio_legacy.h"
 
 #define CARD 0
+
+/* amz_priv sysfs group of the keypad device (init.target.biscuit.rc) */
+#define PRIVACY_STATE "/dev/biscuit_privacy/privacy_state"
+#define PRIVACY_TRIGGER "/dev/biscuit_privacy/privacy_trigger"
 
 struct biscuit_audio_device {
     struct audio_hw_device device;
@@ -497,15 +503,44 @@ static int adev_set_mode(struct audio_hw_device* dev, audio_mode_t mode) {
     return l->set_mode(l, mode);
 }
 
+/* Returns 1 while amz_priv keeps the microphones private, 0, or -1. */
+static int kernel_privacy(void) {
+    char c = 0;
+    int fd = open(PRIVACY_STATE, O_RDONLY | O_CLOEXEC);
+
+    if (fd < 0) return -1;
+    if (read(fd, &c, 1) != 1) c = 0;
+    close(fd);
+    return c == '1' ? 1 : (c == '0' ? 0 : -1);
+}
+
+static void enter_kernel_privacy(void) {
+    int fd = open(PRIVACY_TRIGGER, O_WRONLY | O_CLOEXEC);
+
+    if (fd < 0 || write(fd, "1", 1) != 1) ALOGW("cannot enter kernel privacy: %s", strerror(errno));
+    if (fd >= 0) close(fd);
+}
+
 /*
- * The vendor HAL drives GPIO87 (microphone privacy) and then may fail to
- * notify Amazon's ASP service, which does not run here. Keep the mute
- * state ourselves so AudioFlinger sees it applied.
+ * Microphone privacy belongs to the kernel (amz_priv on the microphone
+ * button), as on Fire OS: software may enter it but never leave it, so an
+ * unmute is refused while the kernel is private.
+ *
+ * The vendor HAL drives GPIO87 as well and then may fail to notify Amazon's
+ * ASP service, which does not run here. Keep the mute state ourselves so
+ * AudioFlinger sees it applied.
  */
 static int adev_set_mic_mute(struct audio_hw_device* dev, bool state) {
     struct biscuit_audio_device* adev = (struct biscuit_audio_device*)dev;
-    int ret = adev->legacy->set_mic_mute(adev->legacy, state);
+    int ret;
 
+    if (!state && kernel_privacy() == 1) {
+        ALOGI("microphone privacy is on; only the microphone button unmutes");
+        adev->mic_muted = true;
+        return 0;
+    }
+    if (state) enter_kernel_privacy();
+    ret = adev->legacy->set_mic_mute(adev->legacy, state);
     if (ret != 0) ALOGW("vendor set_mic_mute(%d) returned %d", state, ret);
     adev->mic_muted = state;
     return 0;
@@ -515,7 +550,7 @@ static int adev_get_mic_mute(const struct audio_hw_device* dev, bool* state) {
     const struct biscuit_audio_device* adev = (const struct biscuit_audio_device*)dev;
 
     if (!state) return -EINVAL;
-    *state = adev->mic_muted;
+    *state = adev->mic_muted || kernel_privacy() == 1;
     return 0;
 }
 

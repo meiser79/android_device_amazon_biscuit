@@ -23,12 +23,12 @@ cc_binary {
     cflags: ["-Wall", "-Werror"],
 }
 
-// Microphone button: KEY_MUTE -> BiscuitService mute toggle.
+// Microphone privacy: follows the kernel's amz_priv state into Android.
 cc_binary {
-    name: "biscuit-keyd",
-    srcs: ["biscuit-keyd.c"],
+    name: "biscuit-privacyd",
+    srcs: ["biscuit-privacyd.c"],
     cflags: ["-Wall", "-Werror"],
-    init_rc: ["biscuit-keyd.rc"],
+    init_rc: ["biscuit-privacyd.rc"],
 }
 
 sh_binary {

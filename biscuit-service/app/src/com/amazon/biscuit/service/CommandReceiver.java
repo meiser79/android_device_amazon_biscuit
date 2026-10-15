@@ -10,7 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
-/** Explicit broadcasts from /system/bin/biscuit_service and biscuit-keyd. */
+/** Explicit broadcasts from /system/bin/biscuit_service and biscuit-privacyd. */
 public final class CommandReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
