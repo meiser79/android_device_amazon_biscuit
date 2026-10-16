@@ -9,8 +9,8 @@
 
 LineageOS 18.1 for Biscuit (MT8163, 512 MB RAM, no display), built on the
 maintained [amazon-oss](https://github.com/amazon-oss) MT8163 common tree and
-its Linux 4.9 kernel. Biscuit needs the amonet v2 unlock (native `boot_a/b`,
-`system_a/b` GPT and TWRP in `recovery`).
+the 32-bit Fire OS 6 Linux 3.18 kernel. Biscuit needs the amonet v2 unlock
+(native `boot_a/b`, `system_a/b` GPT and TWRP in `recovery`).
 
 ## Sources
 
@@ -24,20 +24,14 @@ Add to `.repo/local_manifests/biscuit.xml` on top of a LineageOS 18.1 checkout:
   <remote name="mt8163" fetch="https://github.com/mt8163" />
 
   <project path="device/amazon/biscuit" name="android_device_amazon_biscuit" remote="biscuit" />
-  <project path="kernel/amazon/biscuit" name="android_kernel_amazon_biscuit" remote="biscuit" />
+  <project path="kernel/amazon/biscuit" name="android_kernel_amazon_biscuit" remote="biscuit" revision="refs/heads/lineage-18.1-3.18" />
   <project path="vendor/amazon/biscuit" name="android_vendor_amazon_biscuit" remote="biscuit" />
 
   <project path="device/amazon/mt8163-common" name="android_device_amazon_mt8163-common" remote="amazon-oss" />
   <project path="vendor/amazon/mt8163-common" name="android_vendor_amazon_mt8163-common" remote="amazon-oss" />
   <project path="hardware/amazon" name="android_hardware_amazon" remote="amazon-oss" />
   <project path="hardware/mediatek/mt66xx" name="android_hardware_mediatek_mt66xx" remote="amazon-oss" />
-  <project path="kernel/amazon/mt66xx-common" name="android_kernel_amazon_mt66xx-common" remote="amazon-oss" />
-  <project path="kernel/amazon/mt66xx-wifi" name="android_kernel_amazon_mt66xx-wifi" remote="amazon-oss" />
-  <project path="kernel/amazon/mt66xx-bt" name="android_kernel_amazon_mt66xx-bt" remote="amazon-oss" />
   <project path="patches" name="patches" remote="amazon-oss" />
-
-  <!-- aarch64-linux-gnu GCC for the 4.9 kernel (TARGET_KERNEL_CROSS_COMPILE_PREFIX in mt8163-common) -->
-  <project path="prebuilts/linaro" name="android_prebuilts_linaro" remote="mt8163" revision="refs/heads/lineage-20.0" clone-depth="1" />
 </manifest>
 ```
 
@@ -85,21 +79,32 @@ adb sideload lineage-18.1-*-biscuit.zip
 
 ## How Biscuit differs from the other MT8163 Echo devices
 
-- **Kernel** (`kernel/amazon/biscuit`): amazon-oss `lineage-18.1` 4.9 plus
-  `biscuit_defconfig` and a Biscuit DTS ported from the Fire OS 6.5.7.1 3.18
-  source. The kernel forces its command line (the Fire OS LK passes `root=`,
-  `dm=` and a stale slot suffix), keeps only the LK serial number and boot
-  reason, and exports amonet v2's active slot (`misc+0x360`) as
-  `androidboot.slot_suffix`, so first-stage init mounts the right
-  `system_a/b`.
-- **Radio**: MT8163 connsys like douglas/karnak: `mt66xx` kernel modules,
+- **Kernel** (`kernel/amazon/biscuit`, branch `lineage-18.1-3.18`): the
+  Fire OS 6.5.7.1 3.18 source that CM14 builds, booted as a 32-bit
+  `zImage-dtb` with the Fire OS 6 layout (kernel `0x40008000`, ramdisk
+  `0x44000000`, `bootopt=64S3,32N2,32N2`). The amonet v2 chain (Fire OS 6
+  preloader, LK and ATF) does not start 64-bit kernels, so mt8163-common's
+  arm64 4.9 kernel cannot boot on Biscuit; the userspace is 32-bit either way.
+  On top of CM14's kernel patches it carries the AOSP android-3.18 binder
+  (`binder`/`hwbinder`/`vndbinder`, 64-bit protocol). The kernel forces its
+  command line (the Fire OS LK passes `root=`, `dm=` and a stale slot suffix),
+  keeps only the LK serial number and boot reason, and exports amonet v2's
+  active slot (`misc+0x360`) as `androidboot.slot_suffix`, so first-stage init
+  mounts the right `system_a/b`. It builds with the tree's ARM GCC 4.9.
+- **Radio**: the 3.18 kernel has MT8163 connsys built in (no `mt66xx`
+  modules); Biscuit's stock `wmt_loader`/`wmt_launcher` bring it up, then
   `libbt-vendor`, `libwifi-hal-mt66xx` and `lib_driver_cmd_mt66xx` from
-  `hardware/mediatek/mt66xx`, and Biscuit's stock `wmt_loader`/`wmt_launcher`.
+  `hardware/mediatek/mt66xx` use `/dev/stpbt` and `/dev/wmtWifi`.
+- **USB**: 3.18 only has the `android_usb` gadget, so `init.target.rc`
+  switches mt8163-common's configfs setup back to `sys.usb.configfs=0`;
+  AOSP's `init.usb.rc` then drives the gadget and adbd uses FunctionFS.
 - **Display**: none. `hwcomposer.biscuit` is a headless HWC 1.1 with one
   1x1 primary display and software vsync (`debug.biscuit.hwc.size=WxH`
   overrides the size for debugging), wrapped by the
   composer 2.1 passthrough service. The stock HWC is 1.0, which
-  `HWC2On1Adapter` rejects.
+  `HWC2On1Adapter` rejects. The kernel has no GPU driver, so GLES is
+  SwiftShader on AOSP's `gralloc.default` (`ro.hardware.egl`,
+  `ro.hardware.gralloc`), as on CM14.
 - **Recovery**: `recovery` holds amonet's TWRP. `init.target.rc` bind-mounts
   `/system/bin/true` over `install-recovery.sh`, so Android never replaces it.
 
@@ -117,7 +122,7 @@ adb sideload lineage-18.1-*-biscuit.zip
   answers pairing requests (PIN `0000` or just-works) and connects A2DP sink
   after bonding.
 - **Microphone privacy**: as on Fire OS, the kernel owns it. `amz_priv`
-  (ported to 4.9) mutes GPIO87 (global GPIO 444) when the microphone button is
+  mutes GPIO87 (global GPIO 444) when the microphone button is
   released and unmutes it on the next press, even if Android is hung.
   Software can enter privacy (`privacy_trigger`) but never leave it: the HAL
   wrapper refuses an unmute while `privacy_state` is 1, so
@@ -144,8 +149,8 @@ adb sideload lineage-18.1-*-biscuit.zip
 
 Verified on the host:
 
-- The kernel builds (`Image.gz-dtb`), and the `mt66xx` common, Wi-Fi and BT
-  modules build against it.
+- The kernel builds with the tree's ARM GCC 4.9 into a `zImage-dtb` with
+  the same `evt`/`min_evt` DTBs as amonet's working TWRP kernel.
 - Host tests pass for the bootargs allowlist, amonet slot parsing, the OTA
   write-target checks, the headless HWC (Android 11 headers),
   `biscuit-privacyd` and `sensors.biscuit` (both light sensor sources,
@@ -159,10 +164,8 @@ Verified on the host:
 
 Not verified yet (needs a LineageOS 18.1 build and the device):
 
-- Biscuit's LK booting an arm64 kernel (`bootopt=64S3,32N2,64N2` from
-  mt8163-common).
-- Mali GPU (Fire OS 6 disables it on Biscuit).
-- The Fire OS 6 connsys userspace and audio HAL on the 4.9 kernel.
+- Android 11 on the 3.18 kernel: first-stage mount, binder, SwiftShader,
+  adb over `android_usb`.
 - `system.img` size against the 768 MiB `system` partition.
 
 Not ported on purpose: the lower connsys PSM threshold (compiled into the

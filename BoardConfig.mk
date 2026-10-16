@@ -47,11 +47,33 @@ WIFI_DRIVER_STATE_OFF := "0"
 # Inherit from mt8163-common
 include device/amazon/mt8163-common/BoardConfigCommon.mk
 
-# Kernel
-# biscuit_defconfig forces its own command line (the Fire OS LK passes an
-# unsafe one), so BOARD_KERNEL_CMDLINE from mt8163-common only reaches LK,
-# which reads bootopt= from it to boot the arm64 kernel.
+# Boot image and kernel
+# The amonet v2 boot chain (Fire OS 6 preloader, LK and ATF) only starts
+# 32-bit kernels: a 64-bit kernel, even stock Fire OS 5's, never gets past
+# LK. Boot the Fire OS 6 3.18 kernel as an ARM zImage-dtb with the Fire OS 6
+# and CM14 layout: kernel 0x40008000, ramdisk 0x44000000 (below the
+# ram_console carve-out at 0x44400000), second 0x40f00000, tags 0x48000000.
+# LK reads bootopt= from the boot image to pick the 32-bit kernel mode; the
+# kernel forces its own command line (biscuit_defconfig) and drops the rest.
+BOARD_KERNEL_BASE := 0x40000000
+BOARD_KERNEL_OFFSET := 0x00008000
+BOARD_RAMDISK_OFFSET := 0x04000000
+BOARD_SECOND_OFFSET := 0x00f00000
+BOARD_KERNEL_TAGS_OFFSET := 0x08000000
+BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,32N2 androidboot.selinux=permissive
+BOARD_MKBOOTIMG_ARGS := \
+    --kernel_offset $(BOARD_KERNEL_OFFSET) \
+    --header_version $(BOARD_BOOTIMG_HEADER_VERSION) \
+    --ramdisk_offset $(BOARD_RAMDISK_OFFSET) \
+    --tags_offset $(BOARD_KERNEL_TAGS_OFFSET) \
+    --second_offset $(BOARD_SECOND_OFFSET)
+
+TARGET_KERNEL_ARCH := arm
 TARGET_KERNEL_SOURCE := kernel/amazon/biscuit
+BOARD_KERNEL_IMAGE_NAME := zImage-dtb
+# mt8163-common points at an aarch64 Linaro GCC; 3.18 builds with the
+# tree's own ARM GCC 4.9.
+TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(shell pwd)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androidkernel-
 
 # Recovery
 # amonet v2 provides TWRP; this fstab only describes the slotted partitions

@@ -9,31 +9,44 @@ on init
     mount none /system/bin/true /vendor/bin/install-recovery.sh bind
 
 on boot
+    # USB: the 3.18 kernel has no configfs, only the android_usb gadget.
+    # init.mt8163.usb.rc (imported before this file, so its boot actions run
+    # first) mounts the adb FunctionFS and sets sys.usb.ffs.aio_compat, but
+    # selects configfs; its /config writes fail. Name the gadget, alias its
+    # FunctionFS function to "adb" and hand it back to AOSP's android_usb
+    # handling in init.usb.rc (sys.usb.configfs=0).
+    write /sys/class/android_usb/android0/f_ffs/aliases adb
+    write /sys/class/android_usb/android0/iManufacturer ${ro.product.manufacturer}
+    write /sys/class/android_usb/android0/iProduct ${ro.product.model}
+    write /sys/class/android_usb/android0/iSerial ${ro.serialno}
+    setprop sys.usb.configfs 0
+
     # KSM, as on CM14: merging identical pages helps on 512 MB of RAM.
     write /sys/kernel/mm/ksm/pages_to_scan 100
     write /sys/kernel/mm/ksm/sleep_millisecs 250
     write /sys/kernel/mm/ksm/run 1
 
 on early-boot
-    # The Fire OS audio HAL mutes the microphone (GPIO87) through the 3.18
-    # pinctrl path; blob_fixup points it at this link to the 4.9 node.
-    symlink /sys/devices/platform/soc/10005000.pinctrl/mt_gpio /dev/biscuit_mt_gpio
-    chown root audio /sys/devices/platform/soc/10005000.pinctrl/mt_gpio
-    chmod 0664 /sys/devices/platform/soc/10005000.pinctrl/mt_gpio
+    # The Fire OS audio HAL mutes the microphone (GPIO87) through mt_gpio;
+    # blob_fixup points it at this link.
+    symlink /sys/devices/soc/1000b000.pinctrl/mt_gpio /dev/biscuit_mt_gpio
+    chown root audio /sys/devices/soc/1000b000.pinctrl/mt_gpio
+    chmod 0664 /sys/devices/soc/1000b000.pinctrl/mt_gpio
 
     # amz_priv: the kernel mutes GPIO87 on the microphone button. The audio
     # HAL wrapper enters privacy through privacy_trigger and refuses to
     # unmute while privacy_state is 1; only the button leaves privacy.
-    symlink /sys/devices/platform/soc/10010000.keypad/amz_privacy /dev/biscuit_privacy
-    chown root audio /sys/devices/platform/soc/10010000.keypad/amz_privacy/privacy_trigger
-    chmod 0664 /sys/devices/platform/soc/10010000.keypad/amz_privacy/privacy_trigger
+    symlink /sys/devices/soc/10010000.keypad/amz_privacy /dev/biscuit_privacy
+    chown root audio /sys/devices/soc/10010000.keypad/amz_privacy/privacy_trigger
+    chmod 0664 /sys/devices/soc/10010000.keypad/amz_privacy/privacy_trigger
 
     # sensors.biscuit powers the TSL2540 ambient light sensor (i2c0 0x39)
     chown system system /sys/bus/i2c/devices/0-0039/als_power_state
 
-# MT8163 connsys: the mt66xx modules are loaded by vendor.insmod_sh
-# (init.insmod.cfg); wmt_loader initializes WMT, wmt_launcher downloads
-# the connsys patches and keeps the STP channel up.
+# MT8163 connsys is built into the 3.18 kernel. vendor.insmod_sh has no
+# modules to load and only sets sys.all.modules.ready; wmt_loader then
+# initializes WMT, and wmt_launcher downloads the connsys patches and keeps
+# the STP channel up.
 on property:sys.all.modules.ready=1
     start wmt_loader
 
