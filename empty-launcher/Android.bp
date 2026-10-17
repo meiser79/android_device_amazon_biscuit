@@ -1,0 +1,97 @@
+//
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+// Biscuit has no screen. This black HOME activity replaces the launchers,
+// and its overrides keep the inherited user-facing apps out of the image.
+android_app {
+    name: "BiscuitEmptyLauncher",
+    srcs: ["src/**/*.java"],
+    resource_dirs: ["res"],
+    manifest: "AndroidManifest.xml",
+    sdk_version: "current",
+    certificate: "platform",
+    overrides: [
+        // Launchers, setup and updater
+        "Launcher3QuickStep",
+        "LineageSetupWizard",
+        "OneTimeInitializer",
+        "TrebuchetQuickStep",
+        "Updater",
+
+        // User apps
+        "AudioFX",
+        "Browser2",
+        "Calendar",
+        "Camera2",
+        "Contacts",
+        "DeskClock",
+        "EasterEgg",
+        "Eleven",
+        "Email",
+        "Etar",
+        "ExactCalculator",
+        "Exchange2",
+        "Gallery2",
+        "HTMLViewer",
+        "Jelly",
+        "Music",
+        "MusicFX",
+        "QuickSearchBox",
+        "Seedvault",
+        "SettingsIntelligence",
+        "SoundPicker",
+        "Traceur",
+
+        // Providers and services only those apps use
+        "BookmarkProvider",
+        "CalendarProvider",
+        "DownloadProviderUi",
+
+        // Input, wallpapers, dreams and themes
+        "Backgrounds",
+        "BasicDreams",
+        "IconShapeSquareOverlay",
+        "LatinIME",
+        "LineageBlackAccent",
+        "LineageBlackTheme",
+        "LineageBlueAccent",
+        "LineageBrownAccent",
+        "LineageCyanAccent",
+        "LineageGreenAccent",
+        "LineageNavigationBarNoHint",
+        "LineageOrangeAccent",
+        "LineagePinkAccent",
+        "LineagePurpleAccent",
+        "LineageRedAccent",
+        "LineageThemesStub",
+        "LineageYellowAccent",
+        "LiveWallpapersPicker",
+        "NavigationBarMode2ButtonOverlay",
+        "PhotoTable",
+        "ThemePicker",
+        "WallpaperBackup",
+        "WallpaperCropper",
+
+        // Hardware and features Biscuit does not have
+        "BluetoothMidiService",
+        "BuiltInPrintService",
+        "CtsShimPrebuilt",
+        "CtsShimPrivPrebuilt",
+        "DynamicSystemInstallationService",
+        "ManagedProvisioning",
+        "MtpService",
+        "PrintRecommendationService",
+        "PrintSpooler",
+        "Profiles",
+        "QuickAccessWallet",
+        "SimAppDialog",
+        "WAPPushManager",
+
+        // Space: system is 768 MiB, and only en_US/de_DE are built (the
+        // font loader skips missing files).
+        "NotoSansCJK-Regular.ttc",
+        "NotoSerifCJK-Regular.ttc",
+    ],
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SPDX-FileCopyrightText: 2026 The LineageOS Project
+    SPDX-License-Identifier: Apache-2.0
+-->
+<!-- Biscuit runs Wi-Fi as STA only (p2p_disabled=1): do not declare
+     android.hardware.wifi.direct, which mt8163-common copies to this path. -->
+<permissions />

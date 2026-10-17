@@ -1,0 +1,2 @@
+# Setup wizard (headless)
+ro.setupwizard.mode=DISABLED
