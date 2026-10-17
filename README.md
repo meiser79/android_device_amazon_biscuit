@@ -84,6 +84,11 @@ adb shell twrp sideload
 adb sideload lineage-18.1-*-biscuit.zip
 ```
 
+The OTA writes `boot.img` before it restores addon.d scripts, so Magisk's
+addon.d re-patches the new boot image, and then waits (at most 120 s) for
+addon.d jobs that continue in the background, as Magisk's does: once the
+install reports success, the boot image is final.
+
 ## How Biscuit differs from the other MT8163 Echo devices
 
 - **Kernel** (`kernel/amazon/biscuit`, branch `lineage-18.1-3.18`): the
