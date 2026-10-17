@@ -93,5 +93,11 @@ android_app {
         // font loader skips missing files).
         "NotoSansCJK-Regular.ttc",
         "NotoSerifCJK-Regular.ttc",
+
+        // No display: mt8163-common's LiveDisplay HAL only registers when
+        // the MediaTek display driver exists, but its VINTF fragment
+        // declares it anyway, so LiveDisplayService's getService() blocks
+        // the display thread until Watchdog restarts system_server.
+        "vendor.lineage.livedisplay@2.0-service-mt8163",
     ],
 }
