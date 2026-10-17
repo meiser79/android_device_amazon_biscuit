@@ -66,6 +66,11 @@ service wmt_launcher /vendor/bin/wmt_launcher -p /vendor/firmware/
     group system
     disabled
 
+# Fire OS 6's wmt_loader publishes the connsys chip ID under the Android 7
+# name; the mt66xx libbt-vendor waits for the vendor one.
+on property:persist.mtk.wcn.combo.chipid=*
+    setprop persist.vendor.connsys.chipid ${persist.mtk.wcn.combo.chipid}
+
 on property:init.svc.wmt_launcher=running
     start vendor.biscuit_connsys_rt
 
