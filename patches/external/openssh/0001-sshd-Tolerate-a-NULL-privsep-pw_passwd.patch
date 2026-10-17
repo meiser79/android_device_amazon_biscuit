@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Sat, 17 Oct 2026 15:04:14 +0200
+Subject: [PATCH] sshd: Tolerate a NULL privsep pw_passwd
+
+bionic's getpwnam() returns Android IDs such as SSH_PRIVSEP_USER
+("shell") with pw_passwd NULL, and pwcopy() keeps it NULL. sshd then
+crashed in strlen() while wiping it, right after "sshd version",
+whenever it ran as root. Only wipe a password that is there.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Change-Id: I8d5b9c897773c469909ca25aff3b233f6039d733
+---
+ sshd.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/sshd.c b/sshd.c
+index fba25e6..ce00dda 100644
+--- a/sshd.c
++++ b/sshd.c
+@@ -1760,7 +1760,10 @@ main(int ac, char **av)
+ 			    SSH_PRIVSEP_USER);
+ 	} else {
+ 		privsep_pw = pwcopy(privsep_pw);
+-		freezero(privsep_pw->pw_passwd, strlen(privsep_pw->pw_passwd));
++		/* bionic's getpwnam() leaves pw_passwd NULL. */
++		if (privsep_pw->pw_passwd != NULL)
++			freezero(privsep_pw->pw_passwd,
++			    strlen(privsep_pw->pw_passwd));
+ 		privsep_pw->pw_passwd = xstrdup("*");
+ 	}
+ #if !defined(ANDROID)
+-- 
+2.53.0
+
