@@ -37,6 +37,17 @@ _AMONET_SLOT_ASSERTION = (
 )
 
 _WRITE_COMMANDS = ("block_image_update", "package_extract_file", "write_raw_image")
+
+# addon.d v1 scripts (Magisk) may finish post-restore in a background job;
+# wait for it (at most 120 s) so the install only completes, and the user
+# only reboots, once the boot image is final. 'post-[r]estore' matches the
+# job's command line but not its own text in grep's or this shell's.
+_WAIT_FOR_ADDOND = (
+    'ui_print("Waiting for addon.d background jobs...");\n'
+    'run_program("/sbin/sh", "-c", "i=0; while [ $i -lt 120 ]; do '
+    "grep -qs 'post-[r]estore' /proc/[0-9]*/cmdline || exit 0; "
+    'sleep 1; i=$((i + 1)); done; exit 0");'
+)
 _DEVICE_RE = re.compile(r'"(/dev/block/[^"]*)"')
 
 
@@ -80,7 +91,33 @@ def FullOTA_Assertions(info):
     _replace_device_assertion(info)
 
 
+def _write_boot_before_addond_restore(info):
+    """Write boot.img before backuptool restores the addon.d scripts.
+
+    The generic updater restores addon.d and then writes boot.img. Magisk's
+    addon.d (v1, for non-A/B updates) patches the boot image from a
+    background job that only waits five seconds, so it raced the boot write,
+    and a reboot right after the install could leave a half written boot
+    image. With boot.img written first, addon.d works on the final image,
+    and the updater then waits for that job before it finishes.
+    """
+    script = info.script.script
+    restores = [i for i, line in enumerate(script)
+                if 'backuptool.sh", "restore"' in line]
+    if not restores:
+        return  # backuptool disabled: nothing to reorder
+    boots = [i for i, line in enumerate(script)
+             if line.startswith('package_extract_file("boot.img", ')]
+    if len(restores) != 1 or len(boots) != 1 or boots[0] < restores[0]:
+        raise ValueError("unexpected updater layout: addon.d restore at %s, "
+                         "boot.img write at %s" % (restores, boots))
+    boot = script.pop(boots[0])
+    script.insert(restores[0], boot)
+    script.insert(restores[0] + 2, _WAIT_FOR_ADDOND)
+
+
 def FullOTA_InstallEnd(info):
+    _write_boot_before_addond_restore(info)
     _check_write_targets(info)
 
 
