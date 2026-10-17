@@ -13,7 +13,11 @@
  *   smaller Android 7.1 stream vtables, and every vendor callback gets the
  *   vendor's own stream pointer.
  * - Switches the TLV320DAC3203 speaker route and amplifier around playback,
- *   as the stock headless product does outside the HAL.
+ *   as the stock headless product does outside the HAL. The amplifier only
+ *   comes on after the first write, once the vendor HAL has started I2S and
+ *   powered up the DAC and its output driver, and goes off before the
+ *   stream stops; switching it with the codec avoids the crackle of a cold
+ *   codec powering up into a live amplifier.
  */
 
 #define LOG_TAG "audio.primary.biscuit"
@@ -24,6 +28,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <time.h>
+
+#include <cutils/properties.h>
 #include <hardware/audio.h>
 #include <hardware/hardware.h>
 #include <log/log.h>
@@ -32,6 +39,14 @@
 #include "audio_legacy.h"
 
 #define CARD 0
+
+/*
+ * How long playback runs before the speaker amplifier comes on. 0: right
+ * after the first write, which started I2S and the DAC. A longer delay
+ * swallows short sounds (chimes) that start from standby.
+ */
+#define AMP_DELAY_PROP "persist.vendor.biscuit.amp_delay_ms"
+#define AMP_DELAY_DEFAULT_MS 0
 
 /* amz_priv sysfs group of the keypad device (init.target.biscuit.rc) */
 #define PRIVACY_STATE "/dev/biscuit_privacy/privacy_state"
@@ -47,6 +62,8 @@ struct biscuit_stream_out {
     struct audio_stream_out stream;
     struct audio_stream_out* legacy;
     bool active;
+    bool amp_on;
+    int64_t start_ns;
 };
 
 struct biscuit_stream_in {
@@ -219,11 +236,13 @@ static int out_standby(struct audio_stream* stream) {
     struct audio_stream_out* l = out->legacy;
     int ret = 0;
 
-    if (l->common.standby) ret = l->common.standby(&l->common);
-    if (out->active) {
+    /* Amplifier off first, so it does not amplify the DAC powering down. */
+    if (out->amp_on) {
         set_speaker_amp(false);
-        out->active = false;
+        out->amp_on = false;
     }
+    if (l->common.standby) ret = l->common.standby(&l->common);
+    out->active = false;
     return ret;
 }
 
@@ -272,15 +291,33 @@ static int out_set_volume(struct audio_stream_out* stream, float left, float rig
     return l->set_volume(l, left, right);
 }
 
+static int64_t now_ns(void) {
+    struct timespec ts;
+
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (int64_t)ts.tv_sec * 1000000000LL + ts.tv_nsec;
+}
+
 static ssize_t out_write(struct audio_stream_out* stream, const void* buffer, size_t bytes) {
     struct biscuit_stream_out* out = (struct biscuit_stream_out*)stream;
+    ssize_t ret;
 
     if (!out->active) {
         apply_speaker_route();
-        set_speaker_amp(true);
         out->active = true;
+        out->start_ns = now_ns();
     }
-    return out->legacy->write(out->legacy, buffer, bytes);
+    /* The first write opens the PCM: it starts I2S and powers up the DAC. */
+    ret = out->legacy->write(out->legacy, buffer, bytes);
+    if (!out->amp_on) {
+        int delay_ms = property_get_int32(AMP_DELAY_PROP, AMP_DELAY_DEFAULT_MS);
+
+        if (now_ns() - out->start_ns >= (int64_t)delay_ms * 1000000LL) {
+            set_speaker_amp(true);
+            out->amp_on = true;
+        }
+    }
+    return ret;
 }
 
 static int out_get_render_position(const struct audio_stream_out* stream, uint32_t* dsp_frames) {
