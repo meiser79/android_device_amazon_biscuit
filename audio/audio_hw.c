@@ -58,8 +58,20 @@
  */
 #define ASP_VOLUME_PROP "persist.vendor.biscuit.asp_volume"
 #define ASP_VOLUME_CMD_PROP "persist.vendor.biscuit.asp_volume_cmd"
+#define ASP_CMD_SET_VOIP_MODE 3
 #define ASP_CMD_SET_VOLUME 5
 #define ASP_VOLUME_MAX 30
+
+/*
+ * libasp has no capture processing for plain mic sources (AFE.cfg's "Mic"
+ * path is empty), so such captures get no echo cancellation and a wake word
+ * app cannot hear "stop" over its own playback. Open them with a processed
+ * source instead: by default VOICE_RECOGNITION, the ASR path Fire OS uses
+ * for Alexa (the seven-mic beamformer and AEC, no NR or AGC); 7 selects
+ * VOICE_COMMUNICATION (AEC, NR, AGC, no beamformer), as amazon-oss does;
+ * -1 disables.
+ */
+#define MIC_SOURCE_PROP "persist.vendor.biscuit.mic_source"
 
 /* amz_priv sysfs group of the keypad device (init.target.biscuit.rc) */
 #define PRIVACY_STATE "/dev/biscuit_privacy/privacy_state"
@@ -82,6 +94,8 @@ struct biscuit_stream_out {
 struct biscuit_stream_in {
     struct audio_stream_in stream;
     struct audio_stream_in* legacy;
+    bool voip_capture;
+    bool capture_started;
 };
 
 static struct legacy_audio_hw_device* legacy_dev(const struct audio_hw_device* dev) {
@@ -173,14 +187,10 @@ static void set_speaker_amp(bool enabled) {
 typedef int (*asp_command_t)(void* pipeline, int code, int size, void* data, void* reply,
                              int* reply_size);
 
-static void set_asp_volume(void) {
+static int asp_send_command(int cmd, int value) {
     static asp_command_t asp_command;
     static bool looked_up;
-    int volume = property_get_int32(ASP_VOLUME_PROP, ASP_VOLUME_MAX);
-    int cmd = property_get_int32(ASP_VOLUME_CMD_PROP, ASP_CMD_SET_VOLUME);
-    int ret;
 
-    if (volume < 0 || cmd < 0) return;
     if (!looked_up) {
         /* Loaded by the vendor HAL; only look it up, never load it here. */
         void* handle = dlopen("libasp.so", RTLD_NOW | RTLD_NOLOAD);
@@ -189,9 +199,27 @@ static void set_asp_volume(void) {
         if (!asp_command) ALOGW("libasp asp_command not available");
         looked_up = true;
     }
-    if (!asp_command) return;
-    ret = asp_command(NULL, cmd, sizeof(volume), &volume, NULL, NULL);
+    if (!asp_command) return -ENOSYS;
+    return asp_command(NULL, cmd, sizeof(value), &value, NULL, NULL);
+}
+
+static void set_asp_volume(void) {
+    int volume = property_get_int32(ASP_VOLUME_PROP, ASP_VOLUME_MAX);
+    int cmd = property_get_int32(ASP_VOLUME_CMD_PROP, ASP_CMD_SET_VOLUME);
+    int ret;
+
+    if (volume < 0 || cmd < 0) return;
+    ret = asp_send_command(cmd, volume);
     ALOGI("ASP command %d (volume %d) returned %d", cmd, volume, ret);
+}
+
+static audio_source_t remap_input_source(audio_source_t source) {
+    int target;
+
+    if (source != AUDIO_SOURCE_MIC && source != AUDIO_SOURCE_CAMCORDER) return source;
+    target = property_get_int32(MIC_SOURCE_PROP, AUDIO_SOURCE_VOICE_RECOGNITION);
+    if (target <= AUDIO_SOURCE_DEFAULT || target >= AUDIO_SOURCE_CNT) return source;
+    return (audio_source_t)target;
 }
 
 /* Struct translation */
@@ -512,8 +540,16 @@ static int in_set_gain(struct audio_stream_in* stream, float gain) {
 }
 
 static ssize_t in_read(struct audio_stream_in* stream, void* buffer, size_t bytes) {
-    struct audio_stream_in* l = legacy_in(&stream->common);
-    return l->read(l, buffer, bytes);
+    struct biscuit_stream_in* in = (struct biscuit_stream_in*)stream;
+    struct audio_stream_in* l = in->legacy;
+    ssize_t ret = l->read(l, buffer, bytes);
+
+    if (in->voip_capture && !in->capture_started) {
+        /* The voice source switched playback to the VoIP path; keep that for calls. */
+        asp_send_command(ASP_CMD_SET_VOIP_MODE, 0);
+        in->capture_started = true;
+    }
+    return ret;
 }
 
 static uint32_t in_get_input_frames_lost(struct audio_stream_in* stream) {
@@ -693,11 +729,13 @@ static int adev_open_input_stream(struct audio_hw_device* dev, audio_io_handle_t
     struct legacy_audio_config legacy_config;
     struct audio_stream_in* legacy = NULL;
     struct biscuit_stream_in* in;
+    audio_source_t legacy_source = remap_input_source(source);
     int ret;
 
+    if (legacy_source != source) ALOGI("input source %d opened as %d", source, legacy_source);
     to_legacy_config(config, &legacy_config);
     ret = l->open_input_stream(l, handle, devices, &legacy_config, &legacy, flags, address,
-                               source);
+                               legacy_source);
     from_legacy_config(&legacy_config, config);
     if (ret != 0) return ret;
     if (!legacy) return -ENODEV;
@@ -708,6 +746,8 @@ static int adev_open_input_stream(struct audio_hw_device* dev, audio_io_handle_t
         return -ENOMEM;
     }
     in->legacy = legacy;
+    in->voip_capture = legacy_source != source && legacy_source == AUDIO_SOURCE_VOICE_COMMUNICATION;
+    if (legacy_source != source) set_asp_volume();
     wrap_stream_in(in);
     *stream_in = &in->stream;
     return 0;
@@ -749,7 +789,12 @@ static int adev_create_audio_patch(struct audio_hw_device* dev, unsigned int num
     if (num_sources > AUDIO_PATCH_PORTS_MAX || num_sinks > AUDIO_PATCH_PORTS_MAX)
         return -EINVAL;
     for (i = 0; i < num_sources; i++) to_legacy_port_config(&sources[i], &legacy_sources[i]);
-    for (i = 0; i < num_sinks; i++) to_legacy_port_config(&sinks[i], &legacy_sinks[i]);
+    for (i = 0; i < num_sinks; i++) {
+        to_legacy_port_config(&sinks[i], &legacy_sinks[i]);
+        if (legacy_sinks[i].type == AUDIO_PORT_TYPE_MIX)
+            legacy_sinks[i].ext.mix.usecase.source =
+                    remap_input_source(legacy_sinks[i].ext.mix.usecase.source);
+    }
     return l->create_audio_patch(l, num_sources, legacy_sources, num_sinks, legacy_sinks,
                                  handle);
 }

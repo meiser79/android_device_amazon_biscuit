@@ -146,9 +146,14 @@ install reports success, the boot image is final.
   which has no LIPC at all. Its playback path also applies Amazon's device volume
   (`music_volTab`), which Fire OS sets over LIPC; the HAL wrapper sets it to
   the 0 dB top (`persist.vendor.biscuit.asp_volume`, default 30, -1 to leave
-  it alone), so Android's volume alone controls loudness. Microphone and voice
-  recognition capture get the AOSP/WebRTC AGC (`configs/audio/audio_effects.xml`),
-  as on CM14.
+  it alone), so Android's volume alone controls loudness. Microphone capture
+  is opened in the vendor HAL as `VOICE_RECOGNITION`, libasp's ASR path as
+  Fire OS uses it for Alexa: the seven calibrated microphones
+  (`/proc/idme/miccal.*`) go through Amazon's AEC and beamformer, without NR
+  or AGC (`persist.vendor.biscuit.mic_source`; 7 selects the
+  `VOICE_COMMUNICATION` call path with AEC, NR and AGC but no beamformer).
+  Android adds the AOSP/WebRTC AGC on top for `mic` and `voice_recognition`
+  (`configs/audio/audio_effects.xml`), as CM14 did, so one AGC runs.
 - **Bluetooth speaker**: A2DP sink and AVRCP controller only; BiscuitService
   answers pairing requests (PIN `0000` or just-works) and connects A2DP sink
   after bonding.
