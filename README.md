@@ -140,7 +140,10 @@ install reports success, the boot image is final.
   Its LIPC client (Amazon's IPC over D-Bus, which Fire OS runs and LineageOS
   does not) talks to a source-built `liblipc` stub (`lipc/`): every call
   succeeds and no events arrive, as with the Echo Show's Fire OS 7 `libasp`,
-  which has no LIPC at all. Microphone and voice
+  which has no LIPC at all. Its playback path also applies Amazon's device volume
+  (`music_volTab`), which Fire OS sets over LIPC; the HAL wrapper sets it to
+  the 0 dB top (`persist.vendor.biscuit.asp_volume`, default 30, -1 to leave
+  it alone), so Android's volume alone controls loudness. Microphone and voice
   recognition capture get the AOSP/WebRTC AGC (`configs/audio/audio_effects.xml`),
   as on CM14.
 - **Bluetooth speaker**: A2DP sink and AVRCP controller only; BiscuitService
