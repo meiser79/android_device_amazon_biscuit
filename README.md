@@ -35,12 +35,19 @@ Add to `.repo/local_manifests/biscuit.xml` on top of a LineageOS 18.1 checkout:
 </manifest>
 ```
 
-Then sync and apply the amazon-oss source patches:
+Then sync and apply the amazon-oss source patches, then Biscuit's own
+(`patches/<project path>/`, applied with `git am`, skipping patches that are
+already in):
 
 ```sh
 repo sync -c --no-clone-bundle --no-tags
 ./patches/apply.sh
+./device/amazon/biscuit/patches/apply.sh
 ```
+
+| Biscuit patch | Why |
+| --- | --- |
+| `system/bt` `0001-hci-Tolerate-a-rejected-extended-features-page` | The MT8163 controller rejects a classic feature page it reports (status 0x30); Android 11 aborts on it, Android 7 ignored it |
 
 ## Proprietary files
 
@@ -102,7 +109,9 @@ adb sideload lineage-18.1-*-biscuit.zip
 - **Display**: none. `hwcomposer.biscuit` is a headless HWC 1.1 with one
   1x1 primary display and software vsync at 1 Hz (`debug.biscuit.hwc.size=WxH`
   and `debug.biscuit.hwc.fps=1..60` override them for debugging), wrapped by the
-  composer 2.1 passthrough service. The stock HWC is 1.0, which
+  composer 2.1 passthrough service. It claims every layer as an overlay and
+  drops it, so SurfaceFlinger never composes and never needs a framebuffer
+  target buffer (there is no fbdev to allocate it from). The stock HWC is 1.0, which
   `HWC2On1Adapter` rejects. The kernel has no GPU driver, so GLES is
   SwiftShader on AOSP's `gralloc.default` (`ro.hardware.egl`,
   `ro.hardware.gralloc`), as on CM14.

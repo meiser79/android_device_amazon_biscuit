@@ -1,0 +1,44 @@
+From 98104abb5082f339a4b0e0e2378e8c440a4470b9 Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Sat, 17 Oct 2026 07:53:55 +0200
+Subject: [PATCH] hci: Tolerate a rejected extended features page
+
+The MediaTek MT8163 connsys controller reports more classic feature
+pages than it answers and rejects a later page with status 0x30
+(Parameter Out of Mandatory Range). Android 11 CHECK()s every page, so
+com.android.bluetooth aborts in start_up() and Bluetooth never comes
+up. (Android 7 used assert(), compiled out in release builds, and
+carried on.)
+
+Page 0 stays mandatory. For a later page, log it, stop reading pages
+and leave that page's features cleared.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ hci/src/hci_packet_parser.cc | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/hci/src/hci_packet_parser.cc b/hci/src/hci_packet_parser.cc
+index b1efd44..20defc4 100644
+--- a/hci/src/hci_packet_parser.cc
++++ b/hci/src/hci_packet_parser.cc
+@@ -114,6 +114,16 @@ static void parse_read_local_extended_features_response(
+   uint8_t* stream = read_command_complete_header(
+       response, HCI_READ_LOCAL_EXT_FEATURES,
+       2 + sizeof(bt_device_features_t) /* bytes after */);
++  if (stream == NULL && *page_number_ptr > 0) {
++    // Some controllers (MediaTek MT8163 connsys) report more feature pages
++    // than they answer, and reject the last ones. Page 0 is mandatory; for
++    // the others, stop reading pages and leave their features cleared.
++    LOG_WARN(LOG_TAG, "%s: page %d rejected, stopping at page %d", __func__,
++             *page_number_ptr, *page_number_ptr - 1);
++    *max_page_number_ptr = *page_number_ptr - 1;
++    buffer_allocator->free(response);
++    return;
++  }
+   CHECK(stream != NULL);
+ 
+   STREAM_TO_UINT8(*page_number_ptr, stream);
+-- 
+2.53.0
+
