@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Sat, 17 Oct 2026 15:05:56 +0200
+Subject: [PATCH] start-ssh: Use the sshd_config the build installs
+
+The sshd_config module installs to /system/etc/ssh, but start-ssh ran
+sshd with /vendor/etc/ssh/sshd_config, which no module provides, so
+sshd exited at once ("No such file or directory").
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Change-Id: Ia45af69eae873323e556a6fab055a31eb32c3165
+---
+ start-ssh | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/start-ssh b/start-ssh
+index 9a668fa..39e5018 100644
+--- a/start-ssh
++++ b/start-ssh
+@@ -30,8 +30,8 @@ fi
+ 
+ if [ "1" == "$DEBUG" ] ; then
+     # run sshd in debug mode and capture output to logcat
+-    /system/bin/logwrapper /system/bin/sshd -f /vendor/etc/ssh/sshd_config -D -d
++    /system/bin/logwrapper /system/bin/sshd -f /system/etc/ssh/sshd_config -D -d
+ else
+     # don't daemonize - otherwise we can't stop the sshd service
+-    /system/bin/sshd -f /vendor/etc/ssh/sshd_config -D
++    /system/bin/sshd -f /system/etc/ssh/sshd_config -D
+ fi
+-- 
+2.53.0
+
