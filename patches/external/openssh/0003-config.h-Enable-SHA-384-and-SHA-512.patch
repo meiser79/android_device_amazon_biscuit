@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Sat, 17 Oct 2026 15:39:37 +0200
+Subject: [PATCH] config.h: Enable SHA-384 and SHA-512
+
+OpenSSH 8.3's configure checks EVP_sha256, EVP_sha384 and EVP_sha512,
+but the prebuilt config.h only defines HAVE_EVP_SHA256. digest-openssl.c
+then maps EVP_sha384 and EVP_sha512 to NULL, so every SHA-384/512 digest
+fails. sshd cannot shield its host keys (SSHKEY_SHIELD_PREKEY_HASH is
+SHA-512) and fails in accumulate_host_timing_secret: "Unable to shield
+host key ...: unexpected internal error". The rsa-sha2-512 and
+ecdsa-sha2-nistp384/521 algorithms, which config.h already enables, need
+them too. BoringSSL provides both.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Change-Id: I1920d665790c678fbc9e1ecab7e3aa6bf574d8e9
+---
+ prebuilt-intermediates/config.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/prebuilt-intermediates/config.h b/prebuilt-intermediates/config.h
+index dd7adc6..9174f39 100644
+--- a/prebuilt-intermediates/config.h
++++ b/prebuilt-intermediates/config.h
+@@ -385,6 +385,12 @@
+ /* Define to 1 if you have the `EVP_sha256' function. */
+ #define HAVE_EVP_SHA256 1
+ 
++/* Define to 1 if you have the `EVP_sha384' function. */
++#define HAVE_EVP_SHA384 1
++
++/* Define to 1 if you have the `EVP_sha512' function. */
++#define HAVE_EVP_SHA512 1
++
+ /* Define if you have ut_exit in utmp.h */
+ #define HAVE_EXIT_IN_UTMP 1
+ 
+-- 
+2.53.0
+
