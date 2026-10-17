@@ -1,0 +1,17 @@
+//
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+// Passthrough health 2.1 HAL that reports Biscuit, which has no battery, as
+// always on AC mains, like Android 7's healthd did for battery-less devices.
+// The default android.hardware.health@2.1-service loads any vendor
+// android.hardware.health@2.0-impl*.so; overrides keeps the default one out.
+cc_library_shared {
+    name: "android.hardware.health@2.1-impl-biscuit",
+    stem: "android.hardware.health@2.0-impl-2.1-biscuit",
+    defaults: ["android.hardware.health@2.1-impl-defaults"],
+    vendor: true,
+    srcs: ["health.cpp"],
+    overrides: ["android.hardware.health@2.1-impl"],
+}
