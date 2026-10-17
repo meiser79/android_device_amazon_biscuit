@@ -1,2 +1,6 @@
 # Setup wizard (headless)
 ro.setupwizard.mode=DISABLED
+
+# Bluetooth: the MediaTek connsys firmware setup in libbt-vendor takes longer
+# than Android 11's 2.9 s HCI startup timeout; CM14's stack waited 8 s.
+bluetooth.enable_timeout_ms=8000
