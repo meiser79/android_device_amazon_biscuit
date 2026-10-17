@@ -18,7 +18,6 @@ system/lib/libace_osal.so:lib/libace_osal.so|5ef0fc695d1d074a6d10d783079c071edfc
 system/lib/libace_utils.so:lib/libace_utils.so|69908f5873ed6cadf33ef346a3381ee1e70bbf96
 system/lib/libace_utils_linkedlist.so:lib/libace_utils_linkedlist.so|7578630432b68346f5d5e681a4dec8e08e99e3ba
 system/lib/libasp.so:lib/libasp.so|d6bf62c61986a087ec265bbc26f8368c904344fd
-system/lib/libdbus.so:lib/libdbus.so|4df42fb5a9a43b9726b36dd95e84f8ad247bae7d
 system/lib/libedgeflow_core_neon.so:lib/libedgeflow_core_neon.so|d458d3e06fea464890e78e944255b05411054fd4
 system/lib/libffi3.so:lib/libffi3.so|2e363dd3a577a36c83dbf44160f224b59851bfba
 system/lib/libgio-2.0.so:lib/libgio-2.0.so|e3f420f4cfcce49d9d3fb69869df54d558650a0b
@@ -26,7 +25,6 @@ system/lib/libglib-2.0.so:lib/libglib-2.0.so|eae402d3618963353277255a708fbd56630
 system/lib/libgmodule-2.0.so:lib/libgmodule-2.0.so|2347261b5916991699fa51654a2b243756559571
 system/lib/libgobject-2.0.so:lib/libgobject-2.0.so|32731c2d40a40a04436102bd768b4246c3314ca2
 system/lib/libgthread-2.0.so:lib/libgthread-2.0.so|0ba7d5ae36431ab269b27f2f4c5ca47173db2aba
-system/lib/liblipc.so:lib/liblipc.so|c34d8df659aeee3ce6eba848d32609bae7f9697f
 system/lib/libllog-android.so:lib/libllog-android.so|8c06840dcb26ed2e2e5f124c8bd9e999e7cfa174
 system/lib/libpwr_timer.so:lib/libpwr_timer.so|c84879809c2f23de73afadac4851f63adb087f72
 system/lib/libpwrsvc.so:lib/libpwrsvc.so|143b274b30e1ae7c600560780622ef3b7b14a67c
@@ -49,7 +47,9 @@ system/vendor/lib/libnvram_platform.so:vendor/lib/libnvram_platform.so|3a204f13e
 system/vendor/lib/libspeech_enh_lib.so:vendor/lib/libspeech_enh_lib.so|daa55234181f3ef58b9a9b672ebb8d0980713c2b
 
 # Audio configuration: the TI ADC mic path and PGA (read by the Fire OS 6
-# HAL from /system/etc) and libasp's capture and playback models
+# HAL from /system/etc) and libasp's signal processing models. libasp's
+# LIPC client is served by the source-built liblipc stub (lipc/), so Fire
+# OS's liblipc.so and libdbus.so are not used.
 system/etc/audio_device.xml:etc/audio_device.xml|61332c65147eed88591c21d787afa865d205e307
 system/vendor/etc/audio-algorithms/AFE.cfg:vendor/etc/audio-algorithms/AFE.cfg|a05d1789dfb898ec90f9f11ca222d490abea20a0
 system/vendor/etc/audio-algorithms/EQ_100.cfg:vendor/etc/audio-algorithms/EQ_100.cfg|9941e3ed5153c08cc44392efec1ca40999664e39
