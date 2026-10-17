@@ -21,8 +21,14 @@
  *     SurfaceFlinger 60 times a second. debug.biscuit.hwc.fps (1-60)
  *     overrides it.
  *   - no external display (disp 1 reports an error, i.e. "not connected")
- *   - prepare() marks every layer HWC_FRAMEBUFFER, so SurfaceFlinger composes
- *     everything with GLES (software GL is fine) into the framebuffer target
+ *   - prepare() claims every layer as HWC_OVERLAY, so SurfaceFlinger never
+ *     composes with GLES and never needs the framebuffer target: its
+ *     GRALLOC_USAGE_HW_FB buffer cannot be allocated without an fbdev
+ *     (gralloc.default serves HW_FB only from /dev/graphics/fb0), and
+ *     composing nothing every vsync would only burn CPU in SwiftShader.
+ *     screencap and screenrecord render into their own buffers and still work.
+ *     Solid colour layers stay solid colour (HWC_BACKGROUND), the only
+ *     answer HWC2On1Adapter accepts for them.
  *   - set() consumes the frame: it closes the fences the HWC owns and posts
  *     nothing
  *   - vsync is generated in software (timerfd, at the refresh rate) while
@@ -220,7 +226,16 @@ int hwc_prepare(hwc_composer_device_1_t* /*dev*/, size_t numDisplays,
                     layer->compositionType == HWC_SIDEBAND) {
                 continue;
             }
-            layer->compositionType = HWC_FRAMEBUFFER;
+            // HWC2On1Adapter passes SOLID_COLOR layers as skipped
+            // framebuffer layers without a buffer (this HWC reports no
+            // background colour support). Answering OVERLAY reads as
+            // SOLID_COLOR -> DEVICE, which SurfaceFlinger rejects on every
+            // frame; BACKGROUND keeps them SOLID_COLOR.
+            if ((layer->flags & HWC_SKIP_LAYER) && layer->handle == NULL) {
+                layer->compositionType = HWC_BACKGROUND;
+                continue;
+            }
+            layer->compositionType = HWC_OVERLAY;
             layer->flags &= ~uint32_t(HWC_SKIP_LAYER);
         }
     }
