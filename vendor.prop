@@ -12,5 +12,11 @@ debug.sf.nobootanimation=1
 ro.hardware.egl=swiftshader
 ro.hardware.gralloc=default
 
+# Media: Codec2 takes linear buffers from ION, not gralloc BLOB buffers,
+# which gralloc.default cannot allocate (every Codec2 decoder failed to
+# start). AOSP's default ION | BUFFERQUEUE, over mt8163-common's 851968
+# (+ BLOB); its vendor.prop comes first in /system/build.prop.
+debug.stagefright.c2-poolmask=327680
+
 # Sensors (ambient light only)
 ro.hardware.sensors=biscuit
