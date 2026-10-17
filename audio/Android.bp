@@ -10,6 +10,7 @@ cc_library_shared {
     srcs: ["audio_hw.c"],
     header_libs: ["libhardware_headers"],
     shared_libs: [
+        "libcutils",
         "libhardware",
         "liblog",
         "libtinyalsa",
