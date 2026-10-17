@@ -110,7 +110,10 @@ adb sideload lineage-18.1-*-biscuit.zip
   overrides the size for debugging), wrapped by the
   composer 2.1 passthrough service. It claims every layer as an overlay and
   drops it, so SurfaceFlinger never composes and never needs a framebuffer
-  target buffer (there is no fbdev to allocate it from). The stock HWC is 1.0, which
+  target buffer (there is no fbdev to allocate it from). mt8163-common's
+  LiveDisplay HAL is left out: without the MediaTek display driver it never
+  registers, and its VINTF declaration made `system_server` wait for it
+  until Watchdog restarted it. The stock HWC is 1.0, which
   `HWC2On1Adapter` rejects. The kernel has no GPU driver, so GLES is
   SwiftShader on AOSP's `gralloc.default` (`ro.hardware.egl`,
   `ro.hardware.gralloc`), as on CM14.
