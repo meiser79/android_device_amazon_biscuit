@@ -8,6 +8,13 @@ on init
     # vendor_flash_recovery replace it with the Lineage recovery.
     mount none /system/bin/true /vendor/bin/install-recovery.sh bind
 
+# Rooted debugging (adb root), as on CM14: LineageOS keeps the switch in
+# /data/adbroot/enabled, set from Settings, which a headless device cannot
+# reach. Enable it on debuggable builds before adb_root reads it.
+on post-fs-data && property:ro.debuggable=1
+    mkdir /data/adbroot 0700 root root encryption=Require
+    write /data/adbroot/enabled 1
+
 on boot
     # USB: the 3.18 kernel has no configfs, only the android_usb gadget.
     # init.mt8163.usb.rc (imported before this file, so its boot actions run
