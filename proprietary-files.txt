@@ -48,6 +48,50 @@ system/vendor/lib/libnvram.so:vendor/lib/libnvram.so|ff42c314f429f16e6b57c6648c0
 system/vendor/lib/libnvram_platform.so:vendor/lib/libnvram_platform.so|3a204f13e5a2b42823e61c59a7d18f3400a285ca
 system/vendor/lib/libspeech_enh_lib.so:vendor/lib/libspeech_enh_lib.so|daa55234181f3ef58b9a9b672ebb8d0980713c2b
 
+# Audio configuration: the TI ADC mic path and PGA (read by the Fire OS 6
+# HAL from /system/etc) and libasp's capture and playback models
+system/etc/audio_device.xml:etc/audio_device.xml|61332c65147eed88591c21d787afa865d205e307
+system/vendor/etc/audio-algorithms/AFE.cfg:vendor/etc/audio-algorithms/AFE.cfg|a05d1789dfb898ec90f9f11ca222d490abea20a0
+system/vendor/etc/audio-algorithms/EQ_100.cfg:vendor/etc/audio-algorithms/EQ_100.cfg|9941e3ed5153c08cc44392efec1ca40999664e39
+system/vendor/etc/audio-algorithms/EQ_50.cfg:vendor/etc/audio-algorithms/EQ_50.cfg|0808a7319b4e94458c08ed8efbae4cbcdcfc3197
+system/vendor/etc/audio-algorithms/EQ_60.cfg:vendor/etc/audio-algorithms/EQ_60.cfg|0808a7319b4e94458c08ed8efbae4cbcdcfc3197
+system/vendor/etc/audio-algorithms/EQ_70.cfg:vendor/etc/audio-algorithms/EQ_70.cfg|0808a7319b4e94458c08ed8efbae4cbcdcfc3197
+system/vendor/etc/audio-algorithms/EQ_80.cfg:vendor/etc/audio-algorithms/EQ_80.cfg|b03ccceaa53d5397a8dac39067807960873ff5f0
+system/vendor/etc/audio-algorithms/EQ_90.cfg:vendor/etc/audio-algorithms/EQ_90.cfg|33f089619443e208b5a2d4811d51bfa61e53d8ec
+system/vendor/etc/audio-algorithms/EdgeflowModelConfig.json:vendor/etc/audio-algorithms/EdgeflowModelConfig.json|5ea9d12f02fd5c003e29fba772f8806468b1b0ba
+system/vendor/etc/audio-algorithms/MBCL.cfg:vendor/etc/audio-algorithms/MBCL.cfg|681b06f18f79e3b134b760bbc4e5a1024d5fb1e2
+system/vendor/etc/audio-algorithms/MBCL_VOIP.cfg:vendor/etc/audio-algorithms/MBCL_VOIP.cfg|163fb6a882829c061a3b1d3e231f56159e313e95
+system/vendor/etc/audio-algorithms/MBCL_throttling_100mW.cfg:vendor/etc/audio-algorithms/MBCL_throttling_100mW.cfg|681b06f18f79e3b134b760bbc4e5a1024d5fb1e2
+system/vendor/etc/audio-algorithms/MBCL_throttling_100mW_VOIP.cfg:vendor/etc/audio-algorithms/MBCL_throttling_100mW_VOIP.cfg|65a7ffc4ccaa6204f2a4889a565df276b4ae643a
+system/vendor/etc/audio-algorithms/MBCL_throttling_200mW.cfg:vendor/etc/audio-algorithms/MBCL_throttling_200mW.cfg|681b06f18f79e3b134b760bbc4e5a1024d5fb1e2
+system/vendor/etc/audio-algorithms/MBCL_throttling_200mW_VOIP.cfg:vendor/etc/audio-algorithms/MBCL_throttling_200mW_VOIP.cfg|163fb6a882829c061a3b1d3e231f56159e313e95
+system/vendor/etc/audio-algorithms/MBCL_throttling_400mW.cfg:vendor/etc/audio-algorithms/MBCL_throttling_400mW.cfg|681b06f18f79e3b134b760bbc4e5a1024d5fb1e2
+system/vendor/etc/audio-algorithms/MBCL_throttling_400mW_VOIP.cfg:vendor/etc/audio-algorithms/MBCL_throttling_400mW_VOIP.cfg|163fb6a882829c061a3b1d3e231f56159e313e95
+system/vendor/etc/audio-algorithms/StandAloneAAModules.cfg:vendor/etc/audio-algorithms/StandAloneAAModules.cfg|4532662c5ec458ea2b9be9aaab21989735aa0141
+system/vendor/etc/audio-algorithms/UserEQ.cfg:vendor/etc/audio-algorithms/UserEQ.cfg|fbd623a41feb62c842faa7eb49562bb35c861495
+system/vendor/etc/audio-algorithms/VOIPRxParametricEQ.cfg:vendor/etc/audio-algorithms/VOIPRxParametricEQ.cfg|7b243e7172ae9426b09c53f870b426ac8b5e23b8
+system/vendor/etc/audio-algorithms/VOIPTxParametricEQ.cfg:vendor/etc/audio-algorithms/VOIPTxParametricEQ.cfg|0db0afbb7bde6d1717abf6b92abd273c89a3ec57
+system/vendor/etc/audio-algorithms/VOIP_EQ_100.cfg:vendor/etc/audio-algorithms/VOIP_EQ_100.cfg|aa21393b1ac17d6ed73346a8f29763b909746273
+system/vendor/etc/audio-algorithms/VOIP_EQ_50.cfg:vendor/etc/audio-algorithms/VOIP_EQ_50.cfg|8646703cf564b275671521b4ac5b95e6a4da9152
+system/vendor/etc/audio-algorithms/VOIP_EQ_60.cfg:vendor/etc/audio-algorithms/VOIP_EQ_60.cfg|8646703cf564b275671521b4ac5b95e6a4da9152
+system/vendor/etc/audio-algorithms/VOIP_EQ_70.cfg:vendor/etc/audio-algorithms/VOIP_EQ_70.cfg|8646703cf564b275671521b4ac5b95e6a4da9152
+system/vendor/etc/audio-algorithms/VOIP_EQ_80.cfg:vendor/etc/audio-algorithms/VOIP_EQ_80.cfg|86946d30416f9f41bf133a0c617cf6eee9201028
+system/vendor/etc/audio-algorithms/VOIP_EQ_90.cfg:vendor/etc/audio-algorithms/VOIP_EQ_90.cfg|291bcaa0e09bdc4336bc2131c7732d80296c4b00
+system/vendor/etc/audio-algorithms/asp.cfg:vendor/etc/audio-algorithms/asp.cfg|50f386cbf60cc06b3e5029e99d428b688c27b28d
+system/vendor/etc/audio-algorithms/coefs_FBFV2_Diffused_8beams.cfg:vendor/etc/audio-algorithms/coefs_FBFV2_Diffused_8beams.cfg|f0b9f73d678a7da5a2520cc06ba641846d665081
+system/vendor/etc/audio-algorithms/coefs_FBFV2_EVD_FF_MVDR_8beams.cfg:vendor/etc/audio-algorithms/coefs_FBFV2_EVD_FF_MVDR_8beams.cfg|43a371e44ef70af318c172b82d7447adbeb33eba
+system/vendor/etc/audio-algorithms/coefs_FBFV2_EVD_NF_MVDR_8beams.cfg:vendor/etc/audio-algorithms/coefs_FBFV2_EVD_NF_MVDR_8beams.cfg|43a371e44ef70af318c172b82d7447adbeb33eba
+system/vendor/etc/audio-algorithms/coefs_FBFV2_LowLatency_8beams.cfg:vendor/etc/audio-algorithms/coefs_FBFV2_LowLatency_8beams.cfg|02fe913b72bdf755a7d7a6c41ed04d426fc3df68
+system/vendor/etc/audio-algorithms/coefs_FBFV2_Normal_8beams.cfg:vendor/etc/audio-algorithms/coefs_FBFV2_Normal_8beams.cfg|b994e72bbd41210f38c9c7c1701ab1a7bd7019ff
+system/vendor/etc/audio-algorithms/coefs_FilterBank_AnalysisSynthesis_1024.cfg:vendor/etc/audio-algorithms/coefs_FilterBank_AnalysisSynthesis_1024.cfg|0589858a7701e5772b325c3b60e54a91803abbf5
+system/vendor/etc/audio-algorithms/coefs_FilterBank_AnalysisSynthesis_768cvxGLow.cfg:vendor/etc/audio-algorithms/coefs_FilterBank_AnalysisSynthesis_768cvxGLow.cfg|d665146284ae6368f9dd9c7b9822c6c462d6ebc4
+system/vendor/etc/audio-algorithms/dtd_cpd_priors.cfg:vendor/etc/audio-algorithms/dtd_cpd_priors.cfg|d410a6f89068da2489b7f72d340577b274053c8c
+system/vendor/etc/audio-algorithms/es_cpd_priors.cfg:vendor/etc/audio-algorithms/es_cpd_priors.cfg|6c97142f97826ce71495a4805aeb75d2a3454570
+system/vendor/etc/audio-algorithms/ue_cpd_priors.cfg:vendor/etc/audio-algorithms/ue_cpd_priors.cfg|8fdca3b516b28957ba0b7642f0b408fdc49ce064
+system/vendor/etc/audio-algorithms/vad_cpd_priors.cfg:vendor/etc/audio-algorithms/vad_cpd_priors.cfg|47c8ab765fd5b31840a6c0f7626b63373a302579
+system/vendor/etc/audio-algorithms/vad_lite.tflite:vendor/etc/audio-algorithms/vad_lite.tflite|277fca80608d489942ef393045d94354edd0bcfa
+system/vendor/etc/audio-algorithms/vss_cpd_priors.cfg:vendor/etc/audio-algorithms/vss_cpd_priors.cfg|cce814820395bc1f1dc4f06089505d48097dd470
+
 # Audio (blob_fixup in extract-files.sh, unpinned)
 system/lib/hw/audio.primary.mt8163_headless.so:vendor/lib/hw/audio.primary_amazon.mt8163.so
 system/lib/libacehal_log.so:lib/libacehal_log.so
