@@ -22,6 +22,7 @@
 
 #define LOG_TAG "audio.primary.biscuit"
 
+#include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdlib.h>
@@ -47,6 +48,18 @@
  */
 #define AMP_DELAY_PROP "persist.vendor.biscuit.amp_delay_ms"
 #define AMP_DELAY_DEFAULT_MS 0
+
+/*
+ * libasp's playback path applies Amazon's device volume (music_volTab in
+ * AFE.cfg, index 0-30) on top of Android's. Fire OS's volume service sets it
+ * over LIPC, which goes nowhere here (lipc/), so set it to the 0 dB top and
+ * leave the volume to Android. Command 5 / index 30 are amazon-oss's
+ * ASP_CMD_SET_VOLUME and ASP_VOLUME_MAX; -1 in either property disables it.
+ */
+#define ASP_VOLUME_PROP "persist.vendor.biscuit.asp_volume"
+#define ASP_VOLUME_CMD_PROP "persist.vendor.biscuit.asp_volume_cmd"
+#define ASP_CMD_SET_VOLUME 5
+#define ASP_VOLUME_MAX 30
 
 /* amz_priv sysfs group of the keypad device (init.target.biscuit.rc) */
 #define PRIVACY_STATE "/dev/biscuit_privacy/privacy_state"
@@ -155,6 +168,30 @@ static void set_speaker_amp(bool enabled) {
         route_enum_or_value(mixer, "Audio_Amp_L_Switch", "Off", 0);
     }
     mixer_close(mixer);
+}
+
+typedef int (*asp_command_t)(void* pipeline, int code, int size, void* data, void* reply,
+                             int* reply_size);
+
+static void set_asp_volume(void) {
+    static asp_command_t asp_command;
+    static bool looked_up;
+    int volume = property_get_int32(ASP_VOLUME_PROP, ASP_VOLUME_MAX);
+    int cmd = property_get_int32(ASP_VOLUME_CMD_PROP, ASP_CMD_SET_VOLUME);
+    int ret;
+
+    if (volume < 0 || cmd < 0) return;
+    if (!looked_up) {
+        /* Loaded by the vendor HAL; only look it up, never load it here. */
+        void* handle = dlopen("libasp.so", RTLD_NOW | RTLD_NOLOAD);
+
+        asp_command = handle ? (asp_command_t)dlsym(handle, "asp_command") : NULL;
+        if (!asp_command) ALOGW("libasp asp_command not available");
+        looked_up = true;
+    }
+    if (!asp_command) return;
+    ret = asp_command(NULL, cmd, sizeof(volume), &volume, NULL, NULL);
+    ALOGI("ASP command %d (volume %d) returned %d", cmd, volume, ret);
 }
 
 /* Struct translation */
@@ -306,6 +343,7 @@ static ssize_t out_write(struct audio_stream_out* stream, const void* buffer, si
         apply_speaker_route();
         out->active = true;
         out->start_ns = now_ns();
+        set_asp_volume();
     }
     /* The first write opens the PCM: it starts I2S and powers up the DAC. */
     ret = out->legacy->write(out->legacy, buffer, bytes);
@@ -793,6 +831,7 @@ static int adev_open(const struct hw_module_t* module, const char* name,
     adev->device.common.close = adev_close;
     wrap_device(adev);
     set_speaker_amp(false);
+    set_asp_volume();
 
     *device = &adev->device.common;
     return 0;
