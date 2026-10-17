@@ -63,6 +63,11 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     sensors.biscuit
 
+# Health: report the battery-less speaker as always on AC mains, as Android 7
+# did; replaces mt8163-common's android.hardware.health@2.1-impl
+PRODUCT_PACKAGES += \
+    android.hardware.health@2.1-impl-biscuit
+
 # Audio debugging, as on CM14 (tinymix and tinycap come from the common tree)
 PRODUCT_PACKAGES_DEBUG += \
     tinypcminfo \
