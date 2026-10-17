@@ -130,9 +130,13 @@ adb sideload lineage-18.1-*-biscuit.zip
   (`blob_fixup` in `extract-files.sh`). The HAL also drives GPIO87; its 3.18
   sysfs path is rewritten to `/dev/biscuit_mt_gpio`. Its Biscuit mixer setup
   comes from Fire OS's `/system/etc/audio_device.xml` (the four TI ADC mic
-  inputs, mic PGA 20 dB, SPI framing, playback ramp), and `libasp` loads its
-  capture and playback models from `/system/vendor/etc/audio-algorithms`;
-  without them the microphones stay muted. Microphone and voice
+  inputs, mic PGA 20 dB, SPI framing, playback ramp); without it the
+  microphones stay muted. Amazon's signal processing (`libasp`: beamforming,
+  AEC, AGC) runs with its models from `/system/vendor/etc/audio-algorithms`.
+  Its LIPC client (Amazon's IPC over D-Bus, which Fire OS runs and LineageOS
+  does not) talks to a source-built `liblipc` stub (`lipc/`): every call
+  succeeds and no events arrive, as with the Echo Show's Fire OS 7 `libasp`,
+  which has no LIPC at all. Microphone and voice
   recognition capture get the AOSP/WebRTC AGC (`configs/audio/audio_effects.xml`),
   as on CM14.
 - **Bluetooth speaker**: A2DP sink and AVRCP controller only; BiscuitService

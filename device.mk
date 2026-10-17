@@ -18,6 +18,7 @@ PRODUCT_PACKAGES += \
     audio.primary.biscuit \
     libbinder_shim \
     libbiscuit_audio_shim \
+    liblipc \
     libtinyalsa_shim
 
 PRODUCT_COPY_FILES += \

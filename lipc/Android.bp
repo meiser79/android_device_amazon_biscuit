@@ -1,0 +1,14 @@
+//
+// SPDX-FileCopyrightText: 2026 The LineageOS Project
+// SPDX-License-Identifier: Apache-2.0
+//
+
+// Replaces Fire OS's liblipc.so for libasp (see lipc_stub.c).
+cc_library_shared {
+    name: "liblipc",
+    srcs: ["lipc_stub.c"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+}
