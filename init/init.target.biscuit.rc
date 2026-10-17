@@ -8,6 +8,12 @@ on init
     # vendor_flash_recovery replace it with the Lineage recovery.
     mount none /system/bin/true /vendor/bin/install-recovery.sh bind
 
+    # Codec2: take linear buffers from ION, not gralloc BLOB buffers.
+    # mt8163-common's pool mask (851968) adds BLOB, which gralloc.default
+    # cannot allocate, so every Codec2 decoder (MP3 chimes, ...) failed to
+    # start. AOSP's default: ION | BUFFERQUEUE.
+    setprop debug.stagefright.c2-poolmask 327680
+
 # Rooted debugging (adb root), as on CM14: LineageOS keeps the switch in
 # /data/adbroot/enabled, set from Settings, which a headless device cannot
 # reach. Enable it on debuggable builds before adb_root reads it.

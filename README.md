@@ -121,7 +121,9 @@ install reports success, the boot image is final.
   until Watchdog restarted it. The stock HWC is 1.0, which
   `HWC2On1Adapter` rejects. The kernel has no GPU driver, so GLES is
   SwiftShader on AOSP's `gralloc.default` (`ro.hardware.egl`,
-  `ro.hardware.gralloc`), as on CM14.
+  `ro.hardware.gralloc`), as on CM14. `gralloc.default` has no BLOB buffers, so Codec2
+  takes its linear buffers from ION (`debug.stagefright.c2-poolmask`, set in
+  `init.target.rc` over mt8163-common's mask).
 - **Recovery**: `recovery` holds amonet's TWRP. `init.target.rc` bind-mounts
   `/system/bin/true` over `install-recovery.sh`, so Android never replaces it.
 
