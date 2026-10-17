@@ -115,6 +115,11 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     $(call find-copy-subdir-files,*,$(LOCAL_PATH)/configs/wifi/,$(TARGET_COPY_OUT_VENDOR)/etc/wifi)
 
+# rpmb_svc needs a TEE application Fire OS 6 lacks; ship it disabled
+# (the first PRODUCT_COPY_FILES entry for a destination wins).
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/init/rpmb_svc.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/rpmb_svc.rc
+
 # STA only: replaces the wifi.direct feature that mt8163-common declares
 # (the first PRODUCT_COPY_FILES entry for a destination wins).
 PRODUCT_COPY_FILES += \

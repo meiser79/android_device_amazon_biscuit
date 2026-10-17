@@ -1,0 +1,8 @@
+# Replaces mt8163-common's rpmb_svc.rc. rpmb_svc is a Fire OS 7 client for
+# an RPMB trusted application that Biscuit's Fire OS 6 TEE does not have:
+# it fails to open the session ("create rpmb ta session fail!"), exits 255
+# and init restarts it every five seconds. Keep it declared but disabled.
+service rpmb_svc /vendor/bin/rpmb_svc
+    class late_start
+    group system drmrpc
+    disabled
