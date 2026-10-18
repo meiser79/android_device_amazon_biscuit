@@ -49,9 +49,9 @@ PRODUCT_COPY_FILES += \
 # Display
 # Biscuit has no panel: hwcomposer.biscuit is a headless HWC 1.1 that the
 # composer 2.1 passthrough service wraps with HWC2On1Adapter.
-# The 3.18 kernel has no GPU driver, so render with SwiftShader GLES on
-# AOSP's ashmem gralloc, as CM14 does; vendor.prop selects both over the
-# Mali blobs.
+# Mali stays off on Biscuit, so render with SwiftShader GLES on AOSP's
+# ashmem gralloc, as CM14 does; vendor.prop selects both over the Mali
+# blobs.
 PRODUCT_PACKAGES += \
     gralloc.default \
     hwcomposer.biscuit \
@@ -90,6 +90,15 @@ PRODUCT_PACKAGES += \
 # Keylayout (microphone and action buttons)
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/keylayout/mtk-kpd.kl:$(TARGET_COPY_OUT_VENDOR)/usr/keylayout/mtk-kpd.kl
+
+# Kernel modules: connsys (WMT, Wi-Fi, Bluetooth) from the mt66xx trees
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/configs/init.insmod.cfg:$(TARGET_COPY_OUT_VENDOR)/etc/init.insmod.cfg
+
+PRODUCT_PACKAGES += \
+    mt66xx_bt \
+    mt66xx_common \
+    mt66xx_wlan
 
 # Overlays (Bluetooth: A2DP sink speaker, no source/PAN)
 DEVICE_PACKAGE_OVERLAYS += \

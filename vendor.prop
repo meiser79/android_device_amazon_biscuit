@@ -8,7 +8,7 @@ persist.bluetooth.enablenewavrcp=false
 ro.hardware.hwcomposer=biscuit
 # The boot animation only costs memory on the 1x1 headless display
 debug.sf.nobootanimation=1
-# No GPU driver in the 3.18 kernel: SwiftShader GLES on AOSP's gralloc
+# Mali stays off on Biscuit: SwiftShader GLES on AOSP's gralloc
 ro.hardware.egl=swiftshader
 ro.hardware.gralloc=default
 
