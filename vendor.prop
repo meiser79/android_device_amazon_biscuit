@@ -22,5 +22,10 @@ debug.stagefright.c2-poolmask=327680
 # all four cores online (MediaTek hotplug off) after boot.
 ro.vendor.power.wall_powered=true
 
+# Wi-Fi power save off (patches/frameworks/opt/net/wifi): on mains the radio
+# can stay awake, and power save delayed or lost LAN broadcasts until the
+# next DTIM beacon. 1 turns it back on.
+persist.vendor.biscuit.wifi_powersave=0
+
 # Sensors (ambient light only)
 ro.hardware.sensors=biscuit

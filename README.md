@@ -50,6 +50,7 @@ repo sync -c --no-clone-bundle --no-tags
 | `external/openssh` `0001-sshd-Tolerate-a-NULL-privsep-pw_passwd` | bionic returns the privsep user (`shell`) with a NULL `pw_passwd`; sshd crashed in `strlen()` on it at every start as root |
 | `external/openssh` `0002-start-ssh-Use-the-sshd_config-the-build-installs` | `start-ssh` ran sshd with `/vendor/etc/ssh/sshd_config`, but the config installs to `/system/etc/ssh` only |
 | `external/openssh` `0003-config.h-Enable-SHA-384-and-SHA-512` | The prebuilt `config.h` lacks `HAVE_EVP_SHA384`/`HAVE_EVP_SHA512`, so every SHA-512 digest failed and sshd could not load its host keys ("Unable to shield host key") |
+| `frameworks/opt/net/wifi` `0001-wifi-Let-a-property-keep-power-save-off` | Power save holds broadcasts until the next DTIM beacon and lost some of what kiosks exchange; `persist.vendor.biscuit.wifi_powersave=0` (`vendor.prop`) keeps it off |
 | `system/bt` `0001-hci-Tolerate-a-rejected-extended-features-page` | The MT8163 controller rejects a classic feature page it reports (status 0x30); Android 11 aborts on it, Android 7 ignored it |
 
 ## Proprietary files

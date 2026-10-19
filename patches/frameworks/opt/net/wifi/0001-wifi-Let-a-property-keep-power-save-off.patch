@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Mon, 19 Oct 2026 12:56:09 +0200
+Subject: [PATCH] wifi: Let a property keep power save off
+
+A mains powered device can keep the radio awake. In power save the
+access point holds broadcasts and multicast until the next DTIM beacon,
+which on an Echo Dot running Kiosk Satellite lost about one broadcast in
+five and delayed the rest (jxlarrea/lineageos-biscuit-kiosk-satellite,
+c89ca656). With persist.vendor.biscuit.wifi_powersave=0, setPowerSave()
+never enables it, for ClientModeImpl and WifiLockManager alike.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Change-Id: If4f3d4032387ee2565e8c074b91065fe4201fd4b
+---
+ service/java/com/android/server/wifi/WifiNative.java | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/service/java/com/android/server/wifi/WifiNative.java b/service/java/com/android/server/wifi/WifiNative.java
+index cf362d6..c8bcbd6 100644
+--- a/service/java/com/android/server/wifi/WifiNative.java
++++ b/service/java/com/android/server/wifi/WifiNative.java
+@@ -35,6 +35,7 @@ import android.net.wifi.nl80211.RadioChainInfo;
+ import android.net.wifi.nl80211.WifiNl80211Manager;
+ import android.os.Handler;
+ import android.os.SystemClock;
++import android.os.SystemProperties;
+ import android.text.TextUtils;
+ import android.util.ArraySet;
+ import android.util.Log;
+@@ -2271,6 +2272,13 @@ public class WifiNative {
+      * @param enabled true to enable, false to disable.
+      */
+     public void setPowerSave(@NonNull String ifaceName, boolean enabled) {
++        // A mains powered device can keep the radio awake. In power save the
++        // access point holds broadcasts and multicast until the next DTIM
++        // beacon, which delays or loses what kiosks exchange on the LAN.
++        // persist.vendor.biscuit.wifi_powersave=0 keeps it off.
++        if (enabled && !SystemProperties.getBoolean("persist.vendor.biscuit.wifi_powersave", true)) {
++            enabled = false;
++        }
+         mSupplicantStaIfaceHal.setPowerSave(ifaceName, enabled);
+     }
+ 
+-- 
+2.53.0
+
