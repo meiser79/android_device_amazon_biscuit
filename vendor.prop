@@ -18,5 +18,10 @@ ro.hardware.gralloc=default
 # (+ BLOB); its vendor.prop comes first in /system/build.prop.
 debug.stagefright.c2-poolmask=327680
 
+# Power: always on mains. mt8163-common's init.mt8163.power.rc then keeps
+# all four cores online (MediaTek hotplug off) and sets the performance
+# governor after boot.
+ro.vendor.power.wall_powered=true
+
 # Sensors (ambient light only)
 ro.hardware.sensors=biscuit
