@@ -53,6 +53,7 @@ repo sync -c --no-clone-bundle --no-tags
 | `frameworks/base` `0001-PhoneWindowManager-Broadcast-Biscuit-s-Action-button` | Every Action button press and release also goes out as `com.amazon.biscuit.service.ACTION_BUTTON` (`down`, `eventTime`), also while asleep, so Kiosk Satellite needs no accessibility service for it; `ro.biscuit.action_broadcast=1` advertises it |
 | `frameworks/opt/net/wifi` `0001-wifi-Let-a-property-keep-power-save-off` | Power save holds broadcasts until the next DTIM beacon and lost some of what kiosks exchange; `persist.vendor.biscuit.wifi_powersave=0` (`vendor.prop`) keeps it off |
 | `system/bt` `0001-hci-Tolerate-a-rejected-extended-features-page` | The MT8163 controller rejects a classic feature page it reports (status 0x30); Android 11 aborts on it, Android 7 ignored it |
+| `system/netd` `0001-MDnsSdListener-Report-start-service-OK-when-mdnsd-al` | libmdnssd starts `mdnsd` for native clients (Kiosk Satellite's sendspin), so NsdService's `start-service` found it running and logged a `NativeDaemonFailureException` ("402 Service already running") although discovery works |
 
 ## Proprietary files
 
