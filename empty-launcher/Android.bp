@@ -13,6 +13,15 @@ android_app {
     sdk_version: "current",
     certificate: "platform",
     overrides: [
+        // Headless: no status bar, notifications shade or keyguard to show.
+        // Without SystemUI, Android 11's KeyguardServiceDelegate fails to
+        // bind and treats the device as having no keyguard; the wallpaper
+        // service is off (overlay). Nothing draws a web page either, and
+        // WebView took about 80 MB of system; libwebviewchromium_plat_support
+        // stays, since public.libraries.txt lists it.
+        "SystemUI",
+        "webview",
+
         // Launchers, setup and updater
         "Launcher3QuickStep",
         "LineageSetupWizard",

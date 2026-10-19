@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SPDX-FileCopyrightText: 2026 The LineageOS Project
+    SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- SystemUI is left out (empty-launcher), and the default wallpaper
+         service, ImageWallpaper, lived there. -->
+    <bool name="config_enableWallpaperService">false</bool>
+</resources>
