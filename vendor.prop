@@ -22,6 +22,10 @@ debug.stagefright.c2-poolmask=327680
 # all four cores online (MediaTek hotplug off) after boot.
 ro.vendor.power.wall_powered=true
 
+# Kiosk Satellite: the Action button also goes out as a broadcast
+# (patches/frameworks/base), so it needs no accessibility service for it.
+ro.biscuit.action_broadcast=1
+
 # Wi-Fi power save off (patches/frameworks/opt/net/wifi): on mains the radio
 # can stay awake, and power save delayed or lost LAN broadcasts until the
 # next DTIM beacon. 1 turns it back on.
