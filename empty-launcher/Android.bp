@@ -45,9 +45,21 @@ android_app {
         "Traceur",
 
         // Providers and services only those apps use
+        "BackupRestoreConfirmation",
         "BookmarkProvider",
         "CalendarProvider",
+        "DocumentsUI",
         "DownloadProviderUi",
+        "SharedStorageBackup",
+
+        // Telephony: Biscuit has no radio, and the phone process and the
+        // providers it pulls in only cost RAM.
+        "BlockedNumberProvider",
+        "ContactsProvider",
+        "MmsService",
+        "Telecom",
+        "TelephonyProvider",
+        "TeleService",
 
         // Input, wallpapers, dreams and themes
         "Backgrounds",
@@ -87,6 +99,8 @@ android_app {
         "Profiles",
         "QuickAccessWallet",
         "SimAppDialog",
+        // Android 11 only warns without an intent filter verifier.
+        "StatementService",
         "WAPPushManager",
 
         // Space: system is 768 MiB, and only en_US/de_DE are built (the

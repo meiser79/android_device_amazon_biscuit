@@ -9,6 +9,10 @@
     <bool name="profile_supported_avrcp_target">false</bool>
     <bool name="profile_supported_hs_hfp">false</bool>
     <bool name="profile_supported_pan">false</bool>
+    <!-- PBAP and MAP serve the contacts and SMS/MMS providers, which this
+         product leaves out; PBAP crashes the Bluetooth process without them -->
+    <bool name="profile_supported_pbap">false</bool>
+    <bool name="profile_supported_map">false</bool>
     <!-- Enable sink-side profiles -->
     <bool name="profile_supported_a2dp_sink">true</bool>
     <bool name="profile_supported_avrcp_controller">true</bool>
