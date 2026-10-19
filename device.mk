@@ -138,7 +138,8 @@ PRODUCT_COPY_FILES += \
 # STA only: replaces the wifi.direct feature that mt8163-common declares
 # (the first PRODUCT_COPY_FILES entry for a destination wins).
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/permissions/android.hardware.wifi.direct.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.direct.xml
+    $(LOCAL_PATH)/configs/permissions/android.hardware.wifi.direct.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.wifi.direct.xml \
+    $(LOCAL_PATH)/configs/permissions/biscuit_unavailable_features.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/biscuit_unavailable_features.xml
 
 # Inherit from mt8163-common
 $(call inherit-product, device/amazon/mt8163-common/mt8163.mk)

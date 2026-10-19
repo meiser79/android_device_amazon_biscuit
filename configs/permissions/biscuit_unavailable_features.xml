@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SPDX-FileCopyrightText: 2026 The LineageOS Project
+    SPDX-License-Identifier: Apache-2.0
+-->
+<!--
+    tablet_core_hardware.xml (mt8163-common) declares printing, so
+    SystemServer starts PrintManagerService, which keeps binding the
+    PrintSpooler this product leaves out ("RemotePrintSpooler:
+    TimeoutException: Cannot get spooler!").
+-->
+<permissions>
+    <unavailable-feature name="android.software.print" />
+</permissions>
