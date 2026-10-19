@@ -54,6 +54,7 @@ repo sync -c --no-clone-bundle --no-tags
 | `external/openssh` `0002-start-ssh-Use-the-sshd_config-the-build-installs` | `start-ssh` ran sshd with `/vendor/etc/ssh/sshd_config`, but the config installs to `/system/etc/ssh` only |
 | `external/openssh` `0003-config.h-Enable-SHA-384-and-SHA-512` | The prebuilt `config.h` lacks `HAVE_EVP_SHA384`/`HAVE_EVP_SHA512`, so every SHA-512 digest failed and sshd could not load its host keys ("Unable to shield host key") |
 | `system/bt` `0001-hci-Tolerate-a-rejected-extended-features-page` | The MT8163 controller rejects a classic feature page it reports (status 0x30); Android 11 aborts on it, Android 7 ignored it |
+| `kernel/amazon/mt66xx-common` `0001-wmt-Request-firmware-by-its-base-name` | Fire OS 6's `wmt_launcher` passes the connsys ROM patch as an absolute path, which `request_firmware()` cannot resolve below `firmware_class.path`; the driver retried forever, so connsys never came up (no `wlan0`, the Bluetooth HAL blocked on `/dev/stpbt`) |
 
 ## Proprietary files
 

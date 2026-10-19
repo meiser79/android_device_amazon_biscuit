@@ -1,0 +1,67 @@
+From 6c7a7c288c8c043220c39abf15bec43019d264b7 Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Mon, 19 Oct 2026 20:55:15 +0200
+Subject: [PATCH] wmt: Request firmware by its base name
+
+Biscuit runs Fire OS 6's wmt_launcher, which hands the ROM patch to the
+driver as an absolute path (/vendor/firmware/ROMv2_lm_patch_1_1_hdr.bin).
+request_firmware() resolves names below firmware_class.path and
+ueventd's firmware directories, so it looked for
+/vendor/firmware//vendor/firmware/..., failed with -EAGAIN, and
+wmt_dev_patch_get() retried forever: connsys never came up, /dev/stpbt
+blocked the Bluetooth HAL and Wi-Fi had no interface. The files all sit
+directly in /vendor/firmware, so request the base name, and give up
+after 5 seconds instead of looping.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ module/common_main/linux/wmt_dev.c | 16 +++++++++++++---
+ 1 file changed, 13 insertions(+), 3 deletions(-)
+
+diff --git a/module/common_main/linux/wmt_dev.c b/module/common_main/linux/wmt_dev.c
+index 3ded273..f6428c8 100644
+--- a/module/common_main/linux/wmt_dev.c
++++ b/module/common_main/linux/wmt_dev.c
+@@ -50,6 +50,7 @@
+ #include <linux/fb.h>
+ #endif
+ #include <linux/proc_fs.h>
++#include <linux/string.h>
+ #include <mtk_wcn_cmb_stub.h>
+ #include "osal_typedef.h"
+ #include "osal.h"
+@@ -471,19 +472,28 @@ INT32 wmt_dev_patch_get(PUINT8 pPatchName, osal_firmware **ppPatch)
+ {
+ 	INT32 iRet = -1;
+ 	osal_firmware *fw = NULL;
++	const char *name;
++	INT32 retries = 50;	/* 5 s, then give up instead of looping forever */
+ 
+ 	if (!ppPatch) {
+ 		WMT_ERR_FUNC("invalid ppBufptr!\n");
+ 		return -1;
+ 	}
+ 	*ppPatch = NULL;
++	/*
++	 * request_firmware() looks names up below firmware_class.path, but a
++	 * launcher can pass an absolute path (Fire OS 6's wmt_launcher sends
++	 * /vendor/firmware/ROMv2_lm_patch_1_1_hdr.bin); the files all sit
++	 * directly in that directory, so ask for the base name.
++	 */
++	name = kbasename(pPatchName);
+ 	do {
+-		iRet = request_firmware((const struct firmware **)&fw, pPatchName, NULL);
++		iRet = request_firmware((const struct firmware **)&fw, name, NULL);
+ 		if (iRet == -EAGAIN) {
+-			WMT_ERR_FUNC("failed to open or read!(%s), retry again!\n", pPatchName);
++			WMT_ERR_FUNC("failed to open or read!(%s), retry again!\n", name);
+ 			osal_sleep_ms(100);
+ 		}
+-	} while (iRet == -EAGAIN);
++	} while (iRet == -EAGAIN && --retries > 0);
+ 	if (iRet != 0) {
+ 		WMT_ERR_FUNC("failed to open or read!(%s)\n", pPatchName);
+ 		return -1;
+-- 
+2.53.0
+
