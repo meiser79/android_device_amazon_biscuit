@@ -1,0 +1,38 @@
+From 0c1718d93a2a59ddf5a8f9cac0280782f6d54dcf Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Mon, 19 Oct 2026 21:51:12 +0200
+Subject: [PATCH] MDnsSdListener: Report start-service OK when mdnsd already
+ runs
+
+libmdnssd starts mdnsd on its own for native clients, so it can already
+be running when NsdService enables itself and sends start-service. netd
+then answered 402 "Service already running", and NsdService logged it as
+a NativeDaemonFailureException with a stack trace, although the daemon
+it asked for is up and discovery works. Answer CommandOkay instead.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ server/MDnsSdListener.cpp | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/server/MDnsSdListener.cpp b/server/MDnsSdListener.cpp
+index d551d37..044b5b4 100644
+--- a/server/MDnsSdListener.cpp
++++ b/server/MDnsSdListener.cpp
+@@ -477,10 +477,12 @@ int MDnsSdListener::Handler::runCommand(SocketClient *cli,
+     } else if (strcmp(cmd, "stop-resolve") == 0) {
+         stop(cli, argc, argv, "resolve");
+     } else if (strcmp(cmd, "start-service") == 0) {
++        // mdnsd may already run: libmdnssd starts it for native clients
++        // too. That is what start-service asks for, not a failure.
+         if (mMonitor->startService()) {
+             cli->sendMsg(ResponseCode::CommandOkay, "Service Started", false);
+         } else {
+-            cli->sendMsg(ResponseCode::ServiceStartFailed, "Service already running", false);
++            cli->sendMsg(ResponseCode::CommandOkay, "Service already running", false);
+         }
+     } else if (strcmp(cmd, "stop-service") == 0) {
+         if (mMonitor->stopService()) {
+-- 
+2.53.0
+

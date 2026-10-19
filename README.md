@@ -55,6 +55,7 @@ repo sync -c --no-clone-bundle --no-tags
 | `external/openssh` `0003-config.h-Enable-SHA-384-and-SHA-512` | The prebuilt `config.h` lacks `HAVE_EVP_SHA384`/`HAVE_EVP_SHA512`, so every SHA-512 digest failed and sshd could not load its host keys ("Unable to shield host key") |
 | `system/bt` `0001-hci-Tolerate-a-rejected-extended-features-page` | The MT8163 controller rejects a classic feature page it reports (status 0x30); Android 11 aborts on it, Android 7 ignored it |
 | `kernel/amazon/mt66xx-common` `0001-wmt-Request-firmware-by-its-base-name` | Fire OS 6's `wmt_launcher` passes the connsys ROM patch as an absolute path, which `request_firmware()` cannot resolve below `firmware_class.path`; the driver retried forever, so connsys never came up (no `wlan0`, the Bluetooth HAL blocked on `/dev/stpbt`) |
+| `system/netd` `0001-MDnsSdListener-Report-start-service-OK-when-mdnsd-al` | libmdnssd starts `mdnsd` for native clients (Kiosk Satellite's sendspin), so NsdService's `start-service` found it running and logged a `NativeDaemonFailureException` ("402 Service already running") although discovery works |
 
 ## Proprietary files
 
