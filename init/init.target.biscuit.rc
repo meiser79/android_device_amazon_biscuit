@@ -33,6 +33,12 @@ on boot
     write /sys/kernel/mm/ksm/sleep_millisecs 250
     write /sys/kernel/mm/ksm/run 1
 
+# mt8163-common's wall-powered rule sets the performance governor through
+# cpufreq/policy0, which 3.18 does not have; cpu0/cpufreq is the shared
+# policy on 3.18 and links to policy0 on 4.9.
+on property:sys.boot_completed=1 && property:ro.vendor.power.wall_powered=true
+    write /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor performance
+
 on early-boot
     # The Fire OS audio HAL mutes the microphone (GPIO87) through mt_gpio;
     # blob_fixup points it at this link.
