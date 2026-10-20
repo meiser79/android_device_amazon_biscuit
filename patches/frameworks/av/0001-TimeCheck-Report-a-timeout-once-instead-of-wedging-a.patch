@@ -1,0 +1,45 @@
+From 1d6fd020bd0bcafe51e9e565a6e10a4815cf2c23 Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Tue, 20 Oct 2026 07:20:47 +0200
+Subject: [PATCH] TimeCheck: Report a timeout once instead of wedging
+ audioserver
+
+With the abort on a TimeCheck timeout disabled, the expired request
+stayed first in mMonitorRequests, so threadLoop() found it expired again
+on every pass: it requested HAL tombstones, slept for a second with
+mMutex held and started over. The late binder call could then never take
+mMutex to stop its own monitoring, and every new call blocked starting
+one, so a single call over 5 s left audioserver hung for good (seen as
+"audioserver_binder_timeout: IAudioFlinger command 22" every second, a
+tombstone of the audio HAL each time, and no audio client served).
+
+Log the timeout and drop the expired request, so each one is reported
+once.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Change-Id: I8e9d237b044764c5a3db2989b2cc2f7fd3842781
+---
+ media/utils/TimeCheck.cpp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/media/utils/TimeCheck.cpp b/media/utils/TimeCheck.cpp
+index 46a4ec8..2feaa95 100644
+--- a/media/utils/TimeCheck.cpp
++++ b/media/utils/TimeCheck.cpp
+@@ -133,6 +133,13 @@ bool TimeCheck::TimeCheckThread::threadLoop()
+             }
+             LOG_EVENT_STRING(LOGTAG_AUDIO_BINDER_TIMEOUT, tag);
+             // LOG_ALWAYS_FATAL("TimeCheck timeout for %s", tag);
++            ALOGW("TimeCheck timeout for %s", tag);
++            // Without the abort, drop the expired request: it would expire
++            // again on every pass, and each pass sleeps with mMutex held, so
++            // the late call could never take it to stop its own monitoring.
++            if (mMonitorRequests.size() != 0 && mMonitorRequests.keyAt(0) == endTimeNs) {
++                mMonitorRequests.removeItemsAt(0);
++            }
+         }
+     }
+     return true;
+-- 
+2.53.0
+
