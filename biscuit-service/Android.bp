@@ -23,12 +23,13 @@ cc_binary {
     cflags: ["-Wall", "-Werror"],
 }
 
-// Microphone privacy: follows the kernel's amz_priv state into Android.
+// Buttons: follows the kernel's amz_priv state into Android and broadcasts
+// the Action button.
 cc_binary {
-    name: "biscuit-privacyd",
-    srcs: ["biscuit-privacyd.c"],
+    name: "biscuit-buttond",
+    srcs: ["biscuit-buttond.c"],
     cflags: ["-Wall", "-Werror"],
-    init_rc: ["biscuit-privacyd.rc"],
+    init_rc: ["biscuit-buttond.rc"],
 }
 
 sh_binary {

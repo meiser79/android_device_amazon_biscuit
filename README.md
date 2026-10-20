@@ -169,9 +169,15 @@ install reports success, the boot image is final.
   released and unmutes it on the next press, even if Android is hung.
   Software can enter privacy (`privacy_trigger`) but never leave it: the HAL
   wrapper refuses an unmute while `privacy_state` is 1, so
-  `biscuit_service mic unmute` only works after the button. `biscuit-privacyd`
+  `biscuit_service mic unmute` only works after the button. `biscuit-buttond`
   follows `privacy_state` into Android's microphone mute flag. Both live
   under `/dev/biscuit_privacy` (the keypad's `amz_privacy` sysfs group).
+- **Action button**: `biscuit-buttond` also reads `KEY_HELP` from the keypad
+  and sends every press and release, also while asleep, as
+  `com.amazon.biscuit.service.ACTION_BUTTON` (`down`, `eventTime` in
+  uptime milliseconds) through `am broadcast`. `ro.biscuit.action_broadcast=1`
+  advertises it, so Kiosk Satellite needs no accessibility service for the
+  button. The key is not grabbed; Android still sees it.
 - **LED ring**: `biscuit-ledd` drives the IS31FL3236 ring, and BiscuitService
   mirrors the music volume on it.
 - **Ambient light**: `sensors.biscuit` (sensors HAL 1.3) reports the
@@ -194,8 +200,8 @@ Verified on the host:
 
 - Host tests pass for the bootargs allowlist, amonet slot parsing, the OTA
   write-target checks, the headless HWC (Android 11 headers),
-  `biscuit-privacyd` and `sensors.biscuit` (both light sensor sources,
-  ASan/UBSan).
+  `biscuit-buttond` (privacy state and Action button events) and
+  `sensors.biscuit` (both light sensor sources), with ASan/UBSan.
 - The audio wrapper compiles for arm32 against Android 11 headers with its
   struct-layout asserts; the shim exports exactly the symbols the blobs
   import; BiscuitService compiles against the Android 11 API signatures it

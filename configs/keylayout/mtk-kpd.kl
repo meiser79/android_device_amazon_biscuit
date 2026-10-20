@@ -1,5 +1,6 @@
 # Biscuit MTK keypad: the PMIC power key reports the microphone button as
-# KEY_MUTE (handled by biscuit-keyd), the action button as KEY_HELP.
+# KEY_MUTE (the kernel's amz_priv mutes the microphones), the action button
+# as KEY_HELP (biscuit-buttond also broadcasts it).
 key 113   MUTE
 key 114   VOLUME_DOWN
 key 115   VOLUME_UP

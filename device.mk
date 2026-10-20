@@ -28,7 +28,7 @@ PRODUCT_COPY_FILES += \
 # Biscuit service: LED ring, microphone button and the biscuit_service CLI
 PRODUCT_PACKAGES += \
     BiscuitService \
-    biscuit-privacyd \
+    biscuit-buttond \
     biscuit-ledctl \
     biscuit-ledd \
     biscuit_service \

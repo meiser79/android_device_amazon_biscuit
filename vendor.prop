@@ -23,5 +23,9 @@ debug.stagefright.c2-poolmask=327680
 # governor after boot.
 ro.vendor.power.wall_powered=true
 
+# Kiosk Satellite: biscuit-buttond also broadcasts the Action button, so it
+# needs no accessibility service for it.
+ro.biscuit.action_broadcast=1
+
 # Sensors (ambient light only)
 ro.hardware.sensors=biscuit

@@ -1,0 +1,11 @@
+on property:sys.boot_completed=1
+    start biscuit-buttond
+
+# shell, not system: Android 11 runs am as cmd activity, and
+# ActivityManagerService takes shell commands only from root and shell.
+service biscuit-buttond /system/bin/biscuit-buttond
+    class main
+    user shell
+    group shell input
+    capabilities BLOCK_SUSPEND
+    disabled
