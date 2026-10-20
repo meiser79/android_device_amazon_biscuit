@@ -658,11 +658,18 @@ static int adev_set_mic_mute(struct audio_hw_device* dev, bool state) {
     return 0;
 }
 
+/*
+ * Android's own mute flag, not the kernel's: AudioService broadcasts
+ * MICROPHONE_MUTE_CHANGED only when setMicrophoneMute() changes what this
+ * returns. biscuit-buttond mutes Android after amz_priv has gone private;
+ * counting the kernel here made that mute a no-op, so apps never heard of
+ * it. A refused unmute still keeps mic_muted set.
+ */
 static int adev_get_mic_mute(const struct audio_hw_device* dev, bool* state) {
     const struct biscuit_audio_device* adev = (const struct biscuit_audio_device*)dev;
 
     if (!state) return -EINVAL;
-    *state = adev->mic_muted || kernel_privacy() == 1;
+    *state = adev->mic_muted;
     return 0;
 }
 
