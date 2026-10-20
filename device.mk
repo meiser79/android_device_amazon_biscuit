@@ -74,8 +74,11 @@ PRODUCT_PACKAGES_DEBUG += \
     tinyplay
 
 # Headless HOME; its overrides drop the launchers and user-facing apps.
+# statsd (an APEX) links /system's libincident, which only Perfetto's traced
+# pulled in; keep it now that the overrides drop traced.
 PRODUCT_PACKAGES += \
-    BiscuitEmptyLauncher
+    BiscuitEmptyLauncher \
+    libincident
 
 # Fstab (slotted amonet v2 layout; overrides the mt8163-common legacy fstab)
 PRODUCT_COPY_FILES += \

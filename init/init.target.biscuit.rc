@@ -74,3 +74,23 @@ service vendor.biscuit_connsys_rt /vendor/bin/init.biscuit.connsys.sh
     group root
     oneshot
     disabled
+
+# securetime keeps a DRM time counter in the TEE, which rejects its calls on
+# biscuit (UREE ioctl EINVAL every 5 s). Widevine runs at L3 without it.
+# Disabled like on rook.
+service securetime /vendor/bin/securetime_disabled
+    override
+    class main
+    user media
+    group mediadrm drmrpc
+    disabled
+
+# Biscuit has no camera. PhoneWindowManager only follows the torch when a
+# flash is declared (frameworks/base patch), so nothing asks for the service.
+# The camera HAL, camerahalserver, is left out of the image (BoardConfig.mk).
+service cameraserver /system/bin/cameraserver_disabled
+    override
+    class main
+    user cameraserver
+    group audio camera input drmrpc
+    disabled

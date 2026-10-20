@@ -54,6 +54,7 @@ repo sync -c --no-clone-bundle --no-tags
 | `external/openssh` `0002-start-ssh-Use-the-sshd_config-the-build-installs` | `start-ssh` ran sshd with `/vendor/etc/ssh/sshd_config`, but the config installs to `/system/etc/ssh` only |
 | `external/openssh` `0003-config.h-Enable-SHA-384-and-SHA-512` | The prebuilt `config.h` lacks `HAVE_EVP_SHA384`/`HAVE_EVP_SHA512`, so every SHA-512 digest failed and sshd could not load its host keys ("Unable to shield host key") |
 | `frameworks/av` `0001-TimeCheck-Report-a-timeout-once-instead-of-wedging-a` | amazon-oss keeps audioserver alive on a TimeCheck timeout, but the expired check then fired every second with its lock held, so one binder call over 5 s left audioserver hung for good (no recording, a HAL tombstone every second); each timeout is now logged once and dropped |
+| `frameworks/base` `0002-PhoneWindowManager-Skip-the-torch-callback-without-a` | Lineage's power button torch registered a torch callback at boot, and without cameraserver CameraManager retried the camera service every second for it; the callback is now registered only when a camera flash is declared |
 | `system/bt` `0001-hci-Tolerate-a-rejected-extended-features-page` | The MT8163 controller rejects a classic feature page it reports (status 0x30); Android 11 aborts on it, Android 7 ignored it |
 | `kernel/amazon/mt66xx-common` `0001-wmt-Request-firmware-by-its-base-name` | Fire OS 6's `wmt_launcher` passes the connsys ROM patch as an absolute path, which `request_firmware()` cannot resolve below `firmware_class.path`; the driver retried forever, so connsys never came up (no `wlan0`, the Bluetooth HAL blocked on `/dev/stpbt`) |
 | `system/netd` `0001-MDnsSdListener-Report-start-service-OK-when-mdnsd-al` | libmdnssd starts `mdnsd` for native clients (Kiosk Satellite's sendspin), so NsdService's `start-service` found it running and logged a `NativeDaemonFailureException` ("402 Service already running") although discovery works |
@@ -194,8 +195,23 @@ install reports success, the boot image is final.
   `countdown`, `bt pair|off`, `wifi on|off|connect`), unchanged from CM14.
 - **Wi-Fi** runs as STA only; the connsys WMT/PSM/BTIF threads run SCHED_FIFO.
 - **Apps**: `BiscuitEmptyLauncher` is a black HOME activity (Android needs one
-  to finish booting). Its `overrides` drop the launchers, setup wizard, updater,
-  user apps, keyboard, wallpapers, themes and printing from the image.
+  to finish booting). Its `overrides` drop the launchers, Settings,
+  LineageOS's settings screens (`LineageParts`), `SimpleDeviceConfig`, the
+  setup wizard, updater, user apps, keyboard, wallpapers, themes and printing
+  from the image, and the services a speaker without a secure element or a screen does not use:
+  SecureElement, the ClearKey and CAS HALs (Widevine stays), Perfetto's
+  `traced`, and the storage, VPN, proxy, captive portal, certificate and
+  companion device apps.
+- **Disabled services**: `securetime`, as on rook: the TEE rejects its calls
+  every 5 seconds, and Widevine L3 does not need it. `cameraserver`: Biscuit
+  has no camera, so the image also leaves out mt8163-common's camera HAL
+  (`camerahalserver` and its 57 files, 14 MB), the libraries built for it and
+  the camera feature files.
+- **Features**: `biscuit_unavailable_features.xml` takes back what a headless
+  speaker lacks (touchscreen, motion sensors, location, Ethernet, USB host,
+  WebView, SIP, NFC), so system_server and the lineage-sdk skip the printing,
+  MIDI, backup, app widget, companion device, autofill, Ethernet, LiveDisplay,
+  profile, power menu and trust services.
 
 ## Status
 

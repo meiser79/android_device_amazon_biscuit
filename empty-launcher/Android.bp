@@ -22,10 +22,17 @@ android_app {
         "SystemUI",
         "webview",
 
-        // Launchers, setup and updater
+        // Launchers, settings, setup and updater. LineageParts holds
+        // LineageOS's settings screens; LineageSettingsProvider stays, since
+        // the lineage-sdk services in system_server read it. BiscuitService
+        // answers Bluetooth pairing requests, not Settings. SimpleDeviceConfig
+        // only sets the permissions hub flags for SystemUI.
         "Launcher3QuickStep",
+        "LineageParts",
         "LineageSetupWizard",
         "OneTimeInitializer",
+        "Settings",
+        "SimpleDeviceConfig",
         "TrebuchetQuickStep",
         "Updater",
 
@@ -95,7 +102,89 @@ android_app {
         "WallpaperBackup",
         "WallpaperCropper",
 
+        // AOSP's accent, font, icon, navigation bar and display cutout
+        // overlays: nothing draws what they restyle.
+        "AccentColorAmethystOverlay",
+        "AccentColorAquamarineOverlay",
+        "AccentColorBlackOverlay",
+        "AccentColorCarbonOverlay",
+        "AccentColorCinnamonOverlay",
+        "AccentColorGreenOverlay",
+        "AccentColorOceanOverlay",
+        "AccentColorOrchidOverlay",
+        "AccentColorPaletteOverlay",
+        "AccentColorPurpleOverlay",
+        "AccentColorSandOverlay",
+        "AccentColorSpaceOverlay",
+        "AccentColorTangerineOverlay",
+        "DisplayCutoutEmulationCornerOverlay",
+        "DisplayCutoutEmulationDoubleOverlay",
+        "DisplayCutoutEmulationHoleOverlay",
+        "DisplayCutoutEmulationNarrowOverlay",
+        "DisplayCutoutEmulationTallOverlay",
+        "DisplayCutoutEmulationWaterfallOverlay",
+        "DisplayCutoutEmulationWideOverlay",
+        "FontNotoSerifSourceOverlay",
+        "IconPackCircularAndroidOverlay",
+        "IconPackCircularLauncherOverlay",
+        "IconPackCircularSettingsOverlay",
+        "IconPackCircularSystemUIOverlay",
+        "IconPackCircularThemePickerOverlay",
+        "IconPackFilledAndroidOverlay",
+        "IconPackFilledLauncherOverlay",
+        "IconPackFilledSettingsOverlay",
+        "IconPackFilledSystemUIOverlay",
+        "IconPackFilledThemePickerOverlay",
+        "IconPackKaiAndroidOverlay",
+        "IconPackKaiLauncherOverlay",
+        "IconPackKaiSettingsOverlay",
+        "IconPackKaiSystemUIOverlay",
+        "IconPackKaiThemePickerOverlay",
+        "IconPackRoundedAndroidOverlay",
+        "IconPackRoundedLauncherOverlay",
+        "IconPackRoundedSettingsOverlay",
+        "IconPackRoundedSystemUIOverlay",
+        "IconPackRoundedThemePickerOverlay",
+        "IconPackSamAndroidOverlay",
+        "IconPackSamLauncherOverlay",
+        "IconPackSamSettingsOverlay",
+        "IconPackSamSystemUIOverlay",
+        "IconPackSamThemePickerOverlay",
+        "IconPackVictorAndroidOverlay",
+        "IconPackVictorLauncherOverlay",
+        "IconPackVictorSettingsOverlay",
+        "IconPackVictorSystemUIOverlay",
+        "IconPackVictorThemePickerOverlay",
+        "IconShapeHeartOverlay",
+        "IconShapePebbleOverlay",
+        "IconShapeRoundedRectOverlay",
+        "IconShapeSquircleOverlay",
+        "IconShapeTaperedRectOverlay",
+        "IconShapeTeardropOverlay",
+        "IconShapeVesselOverlay",
+        "NavigationBarMode3ButtonOverlay",
+        "NavigationBarModeGesturalOverlay",
+        "NavigationBarModeGesturalOverlayExtraWideBack",
+        "NavigationBarModeGesturalOverlayNarrowBack",
+        "NavigationBarModeGesturalOverlayWideBack",
+
         // Hardware and features Biscuit does not have
+        // No secure element, but SecureElement runs as a persistent app.
+        "SecureElement",
+        // No browser to sign in to a captive portal with
+        // (InProcessNetworkStack requires the Platform variant).
+        "CaptivePortalLogin",
+        "PlatformCaptivePortalLogin",
+        // No storage or documents UI, VPN, PAC proxies, keyboard dictionary,
+        // certificate installer UI or companion device pairing.
+        "CertInstaller",
+        "CompanionDeviceManager",
+        "ExternalStorageProvider",
+        "PacProcessor",
+        "ProxyHandler",
+        "StorageManager",
+        "UserDictionaryProvider",
+        "VpnDialogs",
         "BluetoothMidiService",
         "BuiltInPrintService",
         "CtsShimPrebuilt",
@@ -122,5 +211,19 @@ android_app {
         // declares it anyway, so LiveDisplayService's getService() blocks
         // the display thread until Watchdog restarts system_server.
         "vendor.lineage.livedisplay@2.0-service-mt8163",
+
+        // No ClearKey or CAS content (manifest_biscuit.xml drops the ClearKey
+        // VINTF entry) and no Perfetto tracing. Widevine stays.
+        "android.hardware.cas@1.2-service",
+        "android.hardware.drm@1.3-service.clearkey",
+        "traced",
+        "traced_probes",
+
+        // No camera: mt8163-common builds these for its camera HAL, which
+        // BoardConfig.mk leaves out; nothing else links them.
+        "camera.device@1.0-impl",
+        "camera.device@3.2-impl",
+        "libcamsensormeta_shim",
+        "libsensorndkbridge",
     ],
 }

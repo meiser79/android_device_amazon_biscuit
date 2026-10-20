@@ -13,9 +13,6 @@ BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(DEVICE_PATH)/bluetooth
 # Bootloader
 TARGET_BOOTLOADER_BOARD_NAME := biscuit
 
-# HIDL
-DEVICE_MANIFEST_FILE += $(DEVICE_PATH)/manifest_biscuit.xml
-
 # Kernel
 TARGET_KERNEL_CONFIG := biscuit_defconfig
 
@@ -46,6 +43,76 @@ WIFI_DRIVER_STATE_OFF := "0"
 
 # Inherit from mt8163-common
 include device/amazon/mt8163-common/BoardConfigCommon.mk
+
+# Camera: Biscuit has none. mt8163-common copies the Echo Show camera HAL,
+# its libraries and the camera feature files; nothing else on /vendor needs
+# them. PRODUCT_COPY_FILES only becomes read-only after the board config, so
+# drop them here.
+BISCUIT_CAMERA_BLOBS := \
+    android.hardware.camera.front.xml \
+    android.hardware.camera.xml \
+    camerahalserver \
+    camerahalserver.rc \
+    android.hardware.camera.provider@2.4-impl-mediatek.so \
+    vendor.mediatek.hardware.camera.ccap@1.0-impl.so \
+    lib3am.so \
+    libcam.camadapter.so \
+    libcam.campipe.so \
+    libcam.camshot.so \
+    libcam.client.so \
+    libcam.device1.so \
+    libcam.exif.so \
+    libcam.exif.v3.so \
+    libcam.hal3a.v3.dng.so \
+    libcam.hal3a.v3.so \
+    libcam.halsensor.so \
+    libcam.iopipe.so \
+    libcam.iopipe_FrmB.so \
+    libcam.metadataprovider.so \
+    libcam.paramsmgr.so \
+    libcam.utils.sensorlistener.so \
+    libcam.utils.so \
+    libcam1_utils.so \
+    libcam3_hwnode.so \
+    libcam3_hwpipeline.so \
+    libcam3_pipeline.so \
+    libcam3_utils.so \
+    libcam_hwutils.so \
+    libcam_mmp.so \
+    libcam_platform.so \
+    libcam_utils.so \
+    libcamalgo.so \
+    libcamdrv.so \
+    libcamdrv_FrmB.so \
+    libccap.so \
+    libccci_util.so \
+    libfeatureio.so \
+    libfeatureiodrv.so \
+    libhdrproc.so \
+    libimageio.so \
+    libimageio_FrmB.so \
+    libimageio_plat_drv.so \
+    libimageio_plat_drv_FrmB.so \
+    libispfeaturem.so \
+    libmtkcam_debugutils.so \
+    libmtkcam_device1.so \
+    libmtkcam_device3.so \
+    libmtkcam_device3_app.so \
+    libmtkcam_fwkutils.so \
+    libmtkcam_grallocutils.so \
+    libmtkcam_imgbuf.so \
+    libmtkcam_metadata.so \
+    libmtkcam_stdutils.so \
+    libmtkcam_sysutils.so \
+    libmtkcam_ulog.so \
+    vendor.mediatek.hardware.camera.ccap@1.0.so \
+    vendor.mediatek.hardware.camera.device@1.1.so \
+    vendor.mediatek.hardware.power@2.0.so
+PRODUCT_COPY_FILES := $(foreach cf,$(PRODUCT_COPY_FILES),$(if \
+    $(filter $(BISCUIT_CAMERA_BLOBS),$(notdir $(word 2,$(subst :, ,$(cf))))),,$(cf)))
+
+# HIDL (after mt8163-common's manifest, so that its overrides apply)
+DEVICE_MANIFEST_FILE += $(DEVICE_PATH)/manifest_biscuit.xml
 
 # Boot image and kernel
 # The arm64 4.9 kernel as Image.gz-dtb, mt8163-common's format. Stock LK

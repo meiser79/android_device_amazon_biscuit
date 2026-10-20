@@ -18,4 +18,33 @@
         <transport>hwbinder</transport>
         <fqname>@1.0::IBluetoothHci/default</fqname>
     </hal>
+    <!-- Biscuit has no camera, and camerahalserver is left out of the image.
+         An override without instances removes the HALs mt8163-common
+         declares for it. -->
+    <hal format="hidl" override="true">
+        <name>android.hardware.camera.provider</name>
+        <transport>hwbinder</transport>
+    </hal>
+    <hal format="hidl" override="true">
+        <name>vendor.mediatek.hardware.camera.ccap</name>
+        <transport>hwbinder</transport>
+    </hal>
+    <!-- Widevine only: ClearKey is not built, and a declared HAL that never
+         registers blocks every DRM client's getService(). override replaces
+         mt8163-common's DRM entry, which comes before this file; it only
+         removes the major versions given in <version>, so this entry uses
+         <version> and <interface> instead of <fqname>. -->
+    <hal format="hidl" override="true">
+        <name>android.hardware.drm</name>
+        <transport>hwbinder</transport>
+        <version>1.1</version>
+        <interface>
+            <name>ICryptoFactory</name>
+            <instance>widevine</instance>
+        </interface>
+        <interface>
+            <name>IDrmFactory</name>
+            <instance>widevine</instance>
+        </interface>
+    </hal>
 </manifest>

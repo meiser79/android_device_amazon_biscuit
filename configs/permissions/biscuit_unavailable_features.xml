@@ -4,11 +4,56 @@
     SPDX-License-Identifier: Apache-2.0
 -->
 <!--
-    tablet_core_hardware.xml (mt8163-common) declares printing, so
-    SystemServer starts PrintManagerService, which keeps binding the
-    PrintSpooler this product leaves out ("RemotePrintSpooler:
-    TimeoutException: Cannot get spooler!").
+    Features mt8163-common, the generic product and the lineage-sdk declare
+    that a headless speaker does not have. Android removes them after
+    reading every permissions file, whichever file declared them, and
+    several gate a service that system_server or the lineage-sdk would
+    otherwise start.
 -->
 <permissions>
+    <!-- No Ethernet port and no USB host: without either, system_server
+         does not start EthernetService. -->
+    <unavailable-feature name="android.hardware.ethernet" />
+    <unavailable-feature name="android.hardware.usb.host" />
+
+    <!-- No screen, no motion sensors (only the light sensor), no GPS and no
+         network location provider. -->
+    <unavailable-feature name="android.hardware.faketouch" />
+    <unavailable-feature name="android.hardware.touchscreen" />
+    <unavailable-feature name="android.hardware.touchscreen.multitouch" />
+    <unavailable-feature name="android.hardware.touchscreen.multitouch.distinct" />
+    <unavailable-feature name="android.hardware.touchscreen.multitouch.jazzhand" />
+    <unavailable-feature name="android.hardware.sensor.accelerometer" />
+    <unavailable-feature name="android.hardware.sensor.compass" />
+    <unavailable-feature name="android.hardware.location" />
+    <unavailable-feature name="android.hardware.location.network" />
+
+    <!-- WebView is left out of the image; no telephony, no NFC (Lineage's
+         own file spells this one "sofware"). -->
+    <unavailable-feature name="android.software.webview" />
+    <unavailable-feature name="android.software.sip" />
+    <unavailable-feature name="android.software.sip.voip" />
+    <unavailable-feature name="android.sofware.nfc.beam" />
+
+    <!-- Services nothing here uses: tablet_core_hardware.xml declares
+         printing, so SystemServer started PrintManagerService, which kept
+         binding the PrintSpooler this product leaves out ("RemotePrintSpooler:
+         TimeoutException: Cannot get spooler!"). MIDI, backup, app widgets,
+         companion devices and autofill have no client either, and nothing
+         draws picture-in-picture or device controls. -->
     <unavailable-feature name="android.software.print" />
+    <unavailable-feature name="android.software.midi" />
+    <unavailable-feature name="android.software.backup" />
+    <unavailable-feature name="android.software.app_widgets" />
+    <unavailable-feature name="android.software.companion_device_setup" />
+    <unavailable-feature name="android.software.autofill" />
+    <unavailable-feature name="android.software.picture_in_picture" />
+    <unavailable-feature name="android.software.controls" />
+
+    <!-- lineage-sdk services for the display, profiles, the power menu and
+         security notifications, which it only starts when declared. -->
+    <unavailable-feature name="org.lineageos.livedisplay" />
+    <unavailable-feature name="org.lineageos.profiles" />
+    <unavailable-feature name="org.lineageos.globalactions" />
+    <unavailable-feature name="org.lineageos.trust" />
 </permissions>
