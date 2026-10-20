@@ -1,0 +1,56 @@
+#!/sbin/sh
+# Flash one image to one Biscuit partition from amonet v2's TWRP:
+# check the image, back the partition up, write it, read it back.
+# Targets: recovery, expdb, or boot (the active slot's, via current-boot).
+OUTFD=$2
+ZIP=$3
+ui_print() { echo "ui_print $1" > /proc/self/fd/$OUTFD; echo "ui_print" > /proc/self/fd/$OUTFD; }
+abort() { ui_print "ERROR: $1"; exit 1; }
+
+TMP=/tmp/biscuit-flash
+rm -rf $TMP && mkdir -p $TMP
+unzip -o "$ZIP" target image.img image.sha256 -d $TMP >/dev/null || abort "cannot unpack the zip"
+PART_NAME=$(cat $TMP/target)
+command -v twrp >/dev/null || abort "this is not TWRP"
+case "$PART_NAME" in
+recovery|expdb)
+  NODE=/dev/block/platform/bootdevice/by-name/$PART_NAME ;;
+boot)
+  # Like the ROM OTA: only TWRP's alias for the active slot's boot
+  [ -x /sbin/amzn_bcbtool ] || abort "no amzn_bcbtool"
+  SLOT=$(/sbin/amzn_bcbtool get_active)
+  case "$SLOT" in a|b) ;; *) abort "unknown active slot '$SLOT'" ;; esac
+  NODE=/dev/block/current-boot
+  [ "$(readlink -f $NODE)" = "$(readlink -f /dev/block/platform/bootdevice/by-name/boot_$SLOT)" ] ||
+    abort "current-boot is not boot_$SLOT"
+  PART_NAME=boot_$SLOT
+  ui_print "- Active slot $SLOT: writing $NODE ($(readlink -f $NODE))" ;;
+*) abort "refusing to write '$PART_NAME'" ;;
+esac
+[ -b "$NODE" ] || abort "$NODE is not a block device"
+
+ui_print "- Checking the image"
+WANT=$(cut -d' ' -f1 $TMP/image.sha256)
+HAVE=$(sha256sum $TMP/image.img | cut -d' ' -f1)
+[ "$WANT" = "$HAVE" ] || abort "image checksum mismatch"
+SIZE=$(wc -c < $TMP/image.img)
+PSIZE=$(blockdev --getsize64 $NODE 2>/dev/null)
+[ -n "$PSIZE" ] && [ "$SIZE" -le "$PSIZE" ] || abort "image ($SIZE) does not fit $PART_NAME ($PSIZE)"
+
+ui_print "- Backing up $PART_NAME to /tmp/$PART_NAME-backup.img"
+dd if=$NODE of=/tmp/$PART_NAME-backup.img bs=4096 2>/dev/null || abort "backup failed"
+sha256sum /tmp/$PART_NAME-backup.img > /tmp/$PART_NAME-backup.img.sha256
+if [ -d /sdcard ] && touch /sdcard/.biscuit-write-test 2>/dev/null; then
+  rm -f /sdcard/.biscuit-write-test
+  cp /tmp/$PART_NAME-backup.img /tmp/$PART_NAME-backup.img.sha256 /sdcard/ && ui_print "  (also copied to /sdcard)"
+fi
+
+ui_print "- Writing $PART_NAME"
+dd if=$TMP/image.img of=$NODE bs=4096 2>/dev/null || abort "write failed; restore /tmp/$PART_NAME-backup.img"
+sync
+
+ui_print "- Verifying $PART_NAME"
+READ=$(head -c $SIZE $NODE | sha256sum | cut -d' ' -f1)
+[ "$READ" = "$WANT" ] || abort "read-back mismatch; restore /tmp/$PART_NAME-backup.img"
+ui_print "- Done: $PART_NAME = $WANT"
+exit 0
