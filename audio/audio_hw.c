@@ -25,6 +25,7 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -849,6 +850,14 @@ static int adev_open(const struct hw_module_t* module, const char* name,
     int ret;
 
     if (strcmp(name, AUDIO_HARDWARE_INTERFACE) != 0) return -EINVAL;
+
+    /*
+     * The Fire OS HAL writes its dump into the fd that dumpsys hands down
+     * through audioserver. When the reader goes away first (dumpsys piped
+     * into head), the write raised SIGPIPE, which killed the HAL service and
+     * with it audioserver. Let such writes fail with EPIPE instead.
+     */
+    signal(SIGPIPE, SIG_IGN);
 
     adev = calloc(1, sizeof(*adev));
     if (!adev) return -ENOMEM;
