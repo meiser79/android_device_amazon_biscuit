@@ -9,11 +9,18 @@
 
 LineageOS 18.1 for Biscuit (MT8163, 512 MB RAM, no display), built on the
 maintained [amazon-oss](https://github.com/amazon-oss) MT8163 common tree and
-the arm64 Linux 4.9 kernel. This `lineage-18.1-4.9` branch is the 4.9 port;
-it has not booted yet (no arm64 kernel has got past LK on Biscuit so far),
-and `lineage-18.1` with the 32-bit Fire OS 6 3.18 kernel is the working
-build. Biscuit needs the amonet v2 unlock
-(native `boot_a/b`, `system_a/b` GPT and TWRP in `recovery`).
+the arm64 Linux 4.9 kernel. This `lineage-18.1` branch is the 4.9 port:
+it boots Android 11 with Wi-Fi, Bluetooth, the speaker and the microphone.
+`lineage-18.1-3.18` is the same device tree on the 32-bit Fire OS 6 3.18
+kernel.
+Biscuit needs the amonet v2 unlock (native `boot_a/b`, `system_a/b` GPT and
+TWRP in `recovery`). To keep a 3.18 build on slot A and this one on slot B,
+use amonet v2.0.1 or newer: its kaeru boots the active slot, while v2.0.0's
+boots `boot_a` whatever slot is active. On v2.0.0, install
+`amonet-biscuit-v2.0.1.zip` from TWRP; it also wipes `misc`, which holds
+the slot selection, so check `adb shell bcbtool dump` in the TWRP it
+reboots into. [`tools/bootchain/`](tools/bootchain/README.md) covers the
+slot switch and flashing only a `boot.img`.
 
 ## Sources
 
@@ -26,8 +33,8 @@ Add to `.repo/local_manifests/biscuit.xml` on top of a LineageOS 18.1 checkout:
   <remote name="biscuit" fetch="https://github.com/meiser79" revision="refs/heads/lineage-18.1" />
   <remote name="mt8163" fetch="https://github.com/mt8163" />
 
-  <project path="device/amazon/biscuit" name="android_device_amazon_biscuit" remote="biscuit" revision="refs/heads/lineage-18.1-4.9" />
-  <project path="kernel/amazon/biscuit" name="android_kernel_amazon_biscuit" remote="biscuit" revision="refs/heads/lineage-18.1-4.9" />
+  <project path="device/amazon/biscuit" name="android_device_amazon_biscuit" remote="biscuit" />
+  <project path="kernel/amazon/biscuit" name="android_kernel_amazon_biscuit" remote="biscuit" />
   <project path="vendor/amazon/biscuit" name="android_vendor_amazon_biscuit" remote="biscuit" />
 
   <project path="device/amazon/mt8163-common" name="android_device_amazon_mt8163-common" remote="amazon-oss" />
@@ -86,7 +93,10 @@ Only through amonet v2 TWRP sideload. The OTA writes nothing except TWRP's
 `/dev/block/current-system` and `/dev/block/current-boot` (see
 `releasetools/releasetools.py`, which also refuses incremental and two-step
 packages and checks the active slot against amonet's BCB). Inspect the
-updater script before every install, and install twice to fill both slots.
+updater script before every install, and install twice to fill both slots,
+or once into slot B next to a 3.18 build on slot A
+([`tools/bootchain/README.md`](tools/bootchain/README.md) covers the
+amonet update, the slot switch and boot-only flashing).
 
 ```sh
 adb shell 'getprop ro.twrp.version; getprop ro.boot.slot_suffix'
@@ -101,7 +111,7 @@ install reports success, the boot image is final.
 
 ## How Biscuit differs from the other MT8163 Echo devices
 
-- **Kernel** (`kernel/amazon/biscuit`, branch `lineage-18.1-4.9`): the
+- **Kernel** (`kernel/amazon/biscuit`, branch `lineage-18.1`): the
   amazon-oss MT8163 4.9 kernel with Biscuit's device tree and the Fire OS
   drivers it needs (`amz_priv`, the TSL2540/TSL2584 light sensors, the
   IS31FL3236 LED ring), built by mt8163-common's Linaro GCC into an arm64
@@ -109,7 +119,12 @@ install reports success, the boot image is final.
   amonet v2's kaeru switches it to 64-bit for mt8163-common's
   `bootopt=64S3,32N2,64N2`. The layout is mt8163-common's (kernel
   `0x40080000`, second `0x40f00000`, tags `0x48000000`) with the ramdisk at
-  the stock `0x44000000`, inside 512 MB. The userspace stays 32-bit. The
+  the stock `0x44000000`, inside 512 MB. Fire OS 6's LK reports 504 MiB,
+  and the DT also reserves the top 8 MiB (`0x5f800000`), ATF/TEE secure
+  memory the kernel hung on right after `paging_init`. Biscuit takes the
+  codec MCLK from the camera MCLK and builds without
+  `CONFIG_SND_I2S_MCLK`, so its audio node keeps mt8163.dtsi's clock list,
+  and DL1 starts the AFE itself. The userspace stays 32-bit. The
   kernel forces its command line (the Fire OS LK passes `root=`, `dm=` and a
   stale slot suffix), keeps only the LK serial number and boot reason, and
   exports amonet v2's active slot (`misc+0x360`) as `androidboot.slot_suffix`,
@@ -117,7 +132,8 @@ install reports success, the boot image is final.
   pstore (`0x44410000`, console zone at `0x444bf000`).
 - **Radio**: MT8163 connsys comes from the `mt66xx` modules
   (`init.insmod.cfg`); Biscuit's stock `wmt_loader`/`wmt_launcher` bring it
-  up, then
+  up (the WMT driver requests the ROM patch by its base name, see the patch
+  table), then
   `libbt-vendor`, `libwifi-hal-mt66xx` and `lib_driver_cmd_mt66xx` from
   `hardware/mediatek/mt66xx` use `/dev/stpbt` and `/dev/wmtWifi`.
 - **USB**: mt8163-common's configfs gadget, unchanged.
@@ -147,10 +163,11 @@ install reports success, the boot image is final.
   (`blob_fixup` in `extract-files.sh`). The HAL also drives GPIO87; its 3.18
   sysfs path is rewritten to `/dev/biscuit_mt_gpio`, which links to the 4.9
   pinctrl node. Its Biscuit mixer setup
-  comes from Fire OS's `/system/etc/audio_device.xml` (the four TI ADC mic
-  inputs, mic PGA 20 dB, SPI framing, playback ramp); without it the
-  microphones stay muted. Amazon's signal processing (`libasp`: beamforming,
-  AEC, AGC) runs with its models from `/system/vendor/etc/audio-algorithms`.
+  comes from Fire OS's `/system/etc/audio_device.xml` (the four TI ADCs
+  behind the seven microphones, mic PGA 20 dB, SPI framing, playback ramp);
+  without it the microphones stay muted. Amazon's signal processing
+  (`libasp`: beamforming, AEC, AGC) runs with its models from
+  `/system/vendor/etc/audio-algorithms`.
   Its LIPC client (Amazon's IPC over D-Bus, which Fire OS runs and LineageOS
   does not) talks to a source-built `liblipc` stub (`lipc/`): every call
   succeeds and no events arrive, as with the Echo Show's Fire OS 7 `libasp`,
@@ -228,11 +245,40 @@ Verified on the host:
 - `extract-files.sh --only-target` extracts all 48 blobs and applies every
   fixup.
 
-Not verified on the device: the 4.9 kernel has not booted on Biscuit yet;
-the 3.18 build on `lineage-18.1` has. After a failed boot, the pstore
-console zone holds the 4.9 kernel's log if the kernel started; neither
-amonet's TWRP nor the 3.18 kernel can read it back yet.
+Verified on the device (2026-10-20, slot B, `4.9.337`): Android 11 boots;
+Wi-Fi and Bluetooth come up, and a phone streams to the Dot as an A2DP sink;
+playback reaches the speaker at 48 kHz; the microphone array captures (PCM 22,
+9 channels at 16 kHz) and a voice satellite's wake word triggers; the light
+sensor reads plausible values (about 2500 lx at a sunny window); the LED ring
+plays its animations and shows the volume; zram swaps with lz4 (about 2.7:1)
+and KSM merges pages; with all four cores loaded at 1.3 GHz for 2.5 minutes
+the CPU settles at about 57 °C, well below the first trip point at 84 °C;
+Widevine runs at L3 (system ID 4445), provisions and gets a license from
+Google's test server. The kernel's console survives a reboot in pstore
+(`/sys/fs/pstore/console-ramoops`).
 
-Replaced: CM14's Amazon AEC preload (`amznaec`), by Amazon's ASP processing
-in the vendor HAL. Not ported: CM14's hostname patch, which targets Android
-7's `ConnectivityService`.
+Open work is tracked in [TODO.md](TODO.md); the history and decision record
+is the [port study](docs/lineage-18.1-port-study.md).
+
+### How 4.9 got to boot
+
+The first 4.9 images seemed not to get past LK. The kernel did start (kaeru
+switches LK to 64-bit; the kernel enters at EL2 with a valid DTB at
+`0x48000000`); pstore breadcrumbs then showed where it stopped:
+
+| Problem | Fix (`android_kernel_amazon_biscuit`, `lineage-18.1`) |
+| --- | --- |
+| Hang right after `paging_init` | Reserve the top 8 MiB below the 504 MiB Fire OS 6's LK reports (`0x5f800000`, ATF/TEE secure memory) |
+| USB oops on a VBUS `ERR_PTR` | Build `usb20` with `OTG_WITHOUT_VBUS_CHECK` for Biscuit |
+| SMI larb 2 NULL dereference | Keep `imgsys` enabled; it is larb 2's clock controller |
+| Sound card did not register | Use the TI DAC links (as on rook) |
+| Audio routed to the headset | Read the jack GPIO as on rook |
+| Playback stalled, every write timed out | Keep mt8163.dtsi's audio clocks (Biscuit builds without `CONFIG_SND_I2S_MCLK`, so rook's list left every clock unprepared), and start the AFE with DL1 |
+
+In this tree: the mt66xx-common patch that requests the connsys ROM patch by
+its base name (Wi-Fi and Bluetooth) and the `frameworks/av` TimeCheck patch.
+
+## Support
+
+If this port is useful to you, you can support the work on
+[Ko-fi](https://ko-fi.com/meiser79).
