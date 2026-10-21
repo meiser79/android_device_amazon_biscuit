@@ -9,10 +9,11 @@
 
 LineageOS 18.1 for Biscuit (MT8163, 512 MB RAM, no display), built on the
 maintained [amazon-oss](https://github.com/amazon-oss) MT8163 common tree and
-the arm64 Linux 4.9 kernel. This `lineage-18.1` branch is the 4.9 port:
-it boots Android 11 with Wi-Fi, Bluetooth, the speaker and the microphone.
-`lineage-18.1-3.18` is the same device tree on the 32-bit Fire OS 6 3.18
-kernel.
+the Linux 4.9 kernel. This `lineage-18.1-arm32` branch builds that kernel
+for 32-bit ARM (`lineage-18.1-arm32` of the kernel), which leaves more RAM
+to Android than the arm64 build on `lineage-18.1`; the userspace is 32-bit
+on both. `lineage-18.1-3.18` is the same device tree on the 32-bit Fire OS 6
+3.18 kernel.
 Biscuit needs the amonet v2 unlock (native `boot_a/b`, `system_a/b` GPT and
 TWRP in `recovery`). To keep a 3.18 build on slot A and this one on slot B,
 LK needs kaeru with the A/B slot fix (merged upstream as
@@ -46,8 +47,8 @@ Add to `.repo/local_manifests/biscuit.xml` on top of a LineageOS 18.1 checkout:
   <remote name="biscuit" fetch="https://github.com/meiser79" revision="refs/heads/lineage-18.1" />
   <remote name="mt8163" fetch="https://github.com/mt8163" />
 
-  <project path="device/amazon/biscuit" name="android_device_amazon_biscuit" remote="biscuit" />
-  <project path="kernel/amazon/biscuit" name="android_kernel_amazon_biscuit" remote="biscuit" />
+  <project path="device/amazon/biscuit" name="android_device_amazon_biscuit" remote="biscuit" revision="refs/heads/lineage-18.1-arm32" />
+  <project path="kernel/amazon/biscuit" name="android_kernel_amazon_biscuit" remote="biscuit" revision="refs/heads/lineage-18.1-arm32" />
   <project path="vendor/amazon/biscuit" name="android_vendor_amazon_biscuit" remote="biscuit" />
 
   <project path="device/amazon/mt8163-common" name="android_device_amazon_mt8163-common" remote="amazon-oss" />
@@ -167,15 +168,15 @@ it booted on, so it has to boot on the wanted slot first:
 
 ## How Biscuit differs from the other MT8163 Echo devices
 
-- **Kernel** (`kernel/amazon/biscuit`, branch `lineage-18.1`): the
+- **Kernel** (`kernel/amazon/biscuit`, branch `lineage-18.1-arm32`): the
   amazon-oss MT8163 4.9 kernel with Biscuit's device tree and the Fire OS
   drivers it needs (`amz_priv`, the TSL2540/TSL2584 light sensors, the
-  IS31FL3236 LED ring), built by mt8163-common's Linaro GCC into an arm64
-  `Image.gz-dtb` (`mediatek/biscuit_evt`). Stock LK forces 32-bit kernels;
-  amonet v2's kaeru switches it to 64-bit for mt8163-common's
-  `bootopt=64S3,32N2,64N2`. The layout is mt8163-common's (kernel
-  `0x40080000`, second `0x40f00000`, tags `0x48000000`) with the ramdisk at
-  the stock `0x44000000`, inside 512 MB. Fire OS 6's LK reports 504 MiB,
+  IS31FL3236 LED ring), built for 32-bit ARM by the tree's GCC 4.9 into a
+  `zImage-dtb` (`biscuit_evt`, linked from the arm64 device tree). Stock LK
+  starts 32-bit kernels, and `bootopt=64S3,32N2,32N2` keeps amonet v2's
+  kaeru from switching it to 64-bit. The layout is the Fire OS 6, CM14 and
+  3.18 one (kernel `0x40008000`, ramdisk `0x44000000`, second `0x40f00000`,
+  tags `0x48000000`), inside 512 MB. Fire OS 6's LK reports 504 MiB,
   and the DT also reserves the top 8 MiB (`0x5f800000`), ATF/TEE secure
   memory the kernel hung on right after `paging_init`. Biscuit takes the
   codec MCLK from the camera MCLK and builds without

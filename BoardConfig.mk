@@ -115,19 +115,19 @@ PRODUCT_COPY_FILES := $(foreach cf,$(PRODUCT_COPY_FILES),$(if \
 DEVICE_MANIFEST_FILE += $(DEVICE_PATH)/manifest_biscuit.xml
 
 # Boot image and kernel
-# The arm64 4.9 kernel as Image.gz-dtb, mt8163-common's format. Stock LK
-# forces 32-bit kernels; amonet v2's kaeru switches it to 64-bit when
-# mt8163-common's bootopt asks for it (bootopt=64S3,32N2,64N2). Kernel
-# 0x40080000, second 0x40f00000 and tags 0x48000000 are mt8163-common's
-# addresses; its ramdisk (0x69244e00) lies past Biscuit's 512 MB, so the
-# ramdisk goes to the stock 0x44000000, below the ram_console and pstore
-# carve-outs at 0x44400000. The kernel forces its own command line
+# The 4.9 kernel built for 32-bit ARM (biscuit_defconfig in arch/arm) as a
+# zImage-dtb, with the Fire OS 6, CM14 and 3.18 layout: kernel 0x40008000,
+# ramdisk 0x44000000 (below the ram_console and pstore carve-outs at
+# 0x44400000), second 0x40f00000, tags 0x48000000. Stock LK starts 32-bit
+# kernels; the third bootopt field stays 32N2 so that amonet v2's kaeru
+# does not switch it to 64-bit. The kernel forces its own command line
 # (biscuit_defconfig); LK only reads bootopt from the boot image.
 BOARD_KERNEL_BASE := 0x40000000
-BOARD_KERNEL_OFFSET := 0x00080000
+BOARD_KERNEL_OFFSET := 0x00008000
 BOARD_RAMDISK_OFFSET := 0x04000000
 BOARD_SECOND_OFFSET := 0x00f00000
 BOARD_KERNEL_TAGS_OFFSET := 0x08000000
+BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,32N2 androidboot.selinux=permissive
 BOARD_MKBOOTIMG_ARGS := \
     --kernel_offset $(BOARD_KERNEL_OFFSET) \
     --header_version $(BOARD_BOOTIMG_HEADER_VERSION) \
@@ -135,7 +135,12 @@ BOARD_MKBOOTIMG_ARGS := \
     --tags_offset $(BOARD_KERNEL_TAGS_OFFSET) \
     --second_offset $(BOARD_SECOND_OFFSET)
 
+TARGET_KERNEL_ARCH := arm
 TARGET_KERNEL_SOURCE := kernel/amazon/biscuit
+BOARD_KERNEL_IMAGE_NAME := zImage-dtb
+# mt8163-common points at an aarch64 Linaro GCC; build with the tree's own
+# ARM GCC 4.9.
+TARGET_KERNEL_CROSS_COMPILE_PREFIX := $(shell pwd)/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androidkernel-
 
 # Recovery
 # amonet v2 provides TWRP; this fstab only describes the slotted partitions
