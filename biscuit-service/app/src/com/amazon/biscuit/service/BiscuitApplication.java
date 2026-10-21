@@ -94,6 +94,7 @@ public final class BiscuitApplication extends Application {
     public void onCreate() {
         super.onCreate();
         mController = new BiscuitController(this);
+        VolumeButtonClaim.reset();
 
         registerReceiver(mVolumeReceiver, new IntentFilter(AudioManager.VOLUME_CHANGED_ACTION));
 

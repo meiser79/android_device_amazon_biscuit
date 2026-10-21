@@ -7,10 +7,11 @@ package com.amazon.biscuit.service;
 
 import android.app.Service;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.IBinder;
 import android.os.RemoteException;
 
-/** Bound LED ring and microphone interface (IBiscuitService). */
+/** Bound LED ring, microphone and volume button interface (IBiscuitService). */
 public final class BiscuitService extends Service {
     private BiscuitController mController;
 
@@ -49,6 +50,15 @@ public final class BiscuitService extends Service {
             String reply = mController.send("STATUS");
             if (reply == null) throw new RemoteException("no daemon reply");
             return reply;
+        }
+
+        @Override
+        public boolean claimVolumeButtons(IBinder token, boolean claimed)
+                throws RemoteException {
+            if (token == null) throw new RemoteException("missing token");
+            String[] packages = getPackageManager().getPackagesForUid(Binder.getCallingUid());
+            if (packages == null || packages.length == 0) return false;
+            return VolumeButtonClaim.set(token, packages[0], claimed);
         }
     };
 
