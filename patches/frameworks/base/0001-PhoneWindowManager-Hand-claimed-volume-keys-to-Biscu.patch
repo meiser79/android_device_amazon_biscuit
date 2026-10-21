@@ -1,0 +1,68 @@
+From ebadc22aa3b436d6a7f48295f0b21b03532b6d6f Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Wed, 21 Oct 2026 06:47:48 +0200
+Subject: [PATCH] PhoneWindowManager: Hand claimed volume keys to Biscuit's
+ BiscuitService
+
+Kiosk Satellite claims the Echo Dot's volume buttons through
+BiscuitService's claimVolumeButtons() to steer a Music Assistant group,
+as on its Kiosk Satellite Edition image (its patch 037). While a claim
+holds, BiscuitService sets sys.biscuit.volume_claimed to 1: then send
+each first press of volume up or down to its CommandReceiver, marked
+as a real press, and consume the key, so neither an app nor the media
+session service changes the volume. Without a claim, nothing changes.
+
+Change-Id: I4b2f7c1e9a8d3065b1c4e7f2a9d8c3b6e5f40a17
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ .../server/policy/PhoneWindowManager.java     | 27 +++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+diff --git a/services/core/java/com/android/server/policy/PhoneWindowManager.java b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+index 28724e2e..64444b26 100644
+--- a/services/core/java/com/android/server/policy/PhoneWindowManager.java
++++ b/services/core/java/com/android/server/policy/PhoneWindowManager.java
+@@ -4162,6 +4162,22 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+         mDefaultDisplayPolicy.setHdmiPlugged(plugged, true /* force */);
+     }
+ 
++    // Set by Biscuit's BiscuitService while an app has claimed the volume
++    // buttons (IBiscuitService.claimVolumeButtons()).
++    private static final String BISCUIT_VOLUME_CLAIMED = "sys.biscuit.volume_claimed";
++
++    private void sendBiscuitVolumeButton(boolean up) {
++        Intent intent = new Intent(up ? "com.amazon.biscuit.service.VOLUME_UP"
++                : "com.amazon.biscuit.service.VOLUME_DOWN");
++        intent.setClassName("com.amazon.biscuit.service",
++                "com.amazon.biscuit.service.CommandReceiver");
++        // A real press, which goes to the claiming app; biscuit_service
++        // volume up and down still change the volume.
++        intent.putExtra("com.amazon.biscuit.service.EXTRA_FROM_BUTTON", true);
++        intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
++        mHandler.post(() -> mContext.sendBroadcastAsUser(intent, UserHandle.SYSTEM));
++    }
++
+     // TODO(b/117479243): handle it in InputPolicy
+     /** {@inheritDoc} */
+     @Override
+@@ -4300,6 +4316,17 @@ public class PhoneWindowManager implements WindowManagerPolicy {
+             case KeyEvent.KEYCODE_VOLUME_DOWN:
+             case KeyEvent.KEYCODE_VOLUME_UP:
+             case KeyEvent.KEYCODE_VOLUME_MUTE: {
++                // While an app holds the volume buttons through Biscuit's
++                // BiscuitService, they go to it and change no volume.
++                if (keyCode != KeyEvent.KEYCODE_VOLUME_MUTE
++                        && SystemProperties.getBoolean(BISCUIT_VOLUME_CLAIMED, false)) {
++                    if (down && event.getRepeatCount() == 0) {
++                        sendBiscuitVolumeButton(keyCode == KeyEvent.KEYCODE_VOLUME_UP);
++                    }
++                    result &= ~ACTION_PASS_TO_USER;
++                    break;
++                }
++
+                 // Eat all down & up keys when using volume wake.
+                 // This disables volume control, music control, and "beep" on key up.
+                 if (isWakeKey && mWakeOnVolumeKeyPress) {
+-- 
+2.53.0
+

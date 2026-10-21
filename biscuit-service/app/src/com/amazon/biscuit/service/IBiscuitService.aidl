@@ -7,4 +7,10 @@ interface IBiscuitService {
     boolean setMicMuted(boolean muted);
     boolean clear();
     String status();
+    // Claim the volume buttons for the calling app while the token lives:
+    // presses go out as VOLUME_BUTTON broadcasts to that app instead of
+    // changing the volume. False with the same token gives them back.
+    // Seventh, as on the Kiosk Satellite Edition image: Kiosk Satellite
+    // calls it by its transaction code.
+    boolean claimVolumeButtons(IBinder token, boolean claimed);
 }

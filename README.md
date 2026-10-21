@@ -74,6 +74,7 @@ repo sync -c --no-clone-bundle --no-tags
 | `external/openssh` `0002-start-ssh-Use-the-sshd_config-the-build-installs` | `start-ssh` ran sshd with `/vendor/etc/ssh/sshd_config`, but the config installs to `/system/etc/ssh` only |
 | `external/openssh` `0003-config.h-Enable-SHA-384-and-SHA-512` | The prebuilt `config.h` lacks `HAVE_EVP_SHA384`/`HAVE_EVP_SHA512`, so every SHA-512 digest failed and sshd could not load its host keys ("Unable to shield host key") |
 | `frameworks/av` `0001-TimeCheck-Report-a-timeout-once-instead-of-wedging-a` | amazon-oss keeps audioserver alive on a TimeCheck timeout, but the expired check then fired every second with its lock held, so one binder call over 5 s left audioserver hung for good (no recording, a HAL tombstone every second); each timeout is now logged once and dropped |
+| `frameworks/base` `0001-PhoneWindowManager-Hand-claimed-volume-keys-to-Biscu` | Kiosk Satellite claims the volume buttons through BiscuitService to steer a Music Assistant group; while `sys.biscuit.volume_claimed` is 1, each press goes to BiscuitService instead of changing the volume |
 | `frameworks/base` `0002-PhoneWindowManager-Skip-the-torch-callback-without-a` | Lineage's power button torch registered a torch callback at boot, and without cameraserver CameraManager retried the camera service every second for it; the callback is now registered only when a camera flash is declared |
 | `system/bt` `0001-hci-Tolerate-a-rejected-extended-features-page` | The MT8163 controller rejects a classic feature page it reports (status 0x30); Android 11 aborts on it, Android 7 ignored it |
 | `kernel/amazon/mt66xx-common` `0001-wmt-Request-firmware-by-its-base-name` | Fire OS 6's `wmt_launcher` passes the connsys ROM patch as an absolute path, which `request_firmware()` cannot resolve below `firmware_class.path`; the driver retried forever, so connsys never came up (no `wlan0`, the Bluetooth HAL blocked on `/dev/stpbt`) |
@@ -212,6 +213,16 @@ install reports success, the boot image is final.
   uptime milliseconds) through `am broadcast`. `ro.biscuit.action_broadcast=1`
   advertises it, so Kiosk Satellite needs no accessibility service for the
   button. The key is not grabbed; Android still sees it.
+- **Volume buttons**: Android handles them as usual until an app claims them
+  through BiscuitService's `claimVolumeButtons()`, the Kiosk Satellite
+  Edition interface (`ro.biscuit.volume_claim=1` advertises it). While the
+  app's binder token lives, `sys.biscuit.volume_claimed` is 1, the
+  `frameworks/base` patch sends each press to BiscuitService, and
+  BiscuitService broadcasts it to that app as
+  `com.amazon.biscuit.service.VOLUME_BUTTON` (`direction` `up` or `down`)
+  without changing the volume. Kiosk Satellite uses it to steer a Music
+  Assistant group. `biscuit_service volume up|down` always changes the
+  Dot's own volume.
 - **LED ring**: `biscuit-ledd` drives the IS31FL3236 ring, and BiscuitService
   mirrors the music volume on it.
 - **Ambient light**: `sensors.biscuit` (sensors HAL 1.3) reports the

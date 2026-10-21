@@ -45,6 +45,8 @@ final class BiscuitController {
     private static final String EXTRA_SSID = "ssid";
     private static final String EXTRA_PSK = "psk";
     private static final String EXTRA_VOLUME = "volume";
+    /* Set by PhoneWindowManager on a real button press. */
+    private static final String EXTRA_FROM_BUTTON = PKG + ".EXTRA_FROM_BUTTON";
     private static final String EXTRA_COUNTDOWN_REMAINING_MS = PKG + ".EXTRA_COUNTDOWN_REMAINING_MS";
     private static final String EXTRA_COUNTDOWN_TOTAL_MS = PKG + ".EXTRA_COUNTDOWN_TOTAL_MS";
 
@@ -74,8 +76,8 @@ final class BiscuitController {
             case WIFI_CONNECT:
                 connectWifi(intent.getStringExtra(EXTRA_SSID), intent.getStringExtra(EXTRA_PSK));
                 break;
-            case VOLUME_UP: adjustVolume(AudioManager.ADJUST_RAISE); break;
-            case VOLUME_DOWN: adjustVolume(AudioManager.ADJUST_LOWER); break;
+            case VOLUME_UP: volumeButton(intent, "up", AudioManager.ADJUST_RAISE); break;
+            case VOLUME_DOWN: volumeButton(intent, "down", AudioManager.ADJUST_LOWER); break;
             case VOLUME_SET: setVolume(intent.getIntExtra(EXTRA_VOLUME, -1)); break;
             case COUNTDOWN_PROGRESS:
                 setCountdown(intent.getLongExtra(EXTRA_COUNTDOWN_REMAINING_MS, -1),
@@ -119,6 +121,16 @@ final class BiscuitController {
     private void updateVolumeLed() {
         AudioManager audio = audio();
         updateVolumeLed(AudioManager.STREAM_MUSIC, audio.getStreamVolume(AudioManager.STREAM_MUSIC));
+    }
+
+    /* A button press goes to the app holding the buttons, if any is left;
+     * biscuit_service volume up and down always change the volume. */
+    private void volumeButton(Intent intent, String direction, int adjust) {
+        if (intent.getBooleanExtra(EXTRA_FROM_BUTTON, false)
+                && VolumeButtonClaim.forward(mContext, direction)) {
+            return;
+        }
+        adjustVolume(adjust);
     }
 
     private void adjustVolume(int direction) {
