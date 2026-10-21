@@ -1,0 +1,44 @@
+From f8757cd882c9927eccc25e4536e9c75b471584c4 Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Wed, 21 Oct 2026 07:47:50 +0200
+Subject: [PATCH] ClientModeImpl: Keep power save off after DHCP while a
+ high-perf lock holds
+
+handlePostDhcpSetup() turns power save back on after every DHCP
+exchange, including each lease renewal, without asking WifiLockManager.
+WifiLockManager only calls setPowerSave() when its mode changes, so an
+app that holds a WIFI_MODE_FULL_HIGH_PERF lock for good (Kiosk
+Satellite's ks:screen-off-wifi) got power save back at the first
+renewal and kept it until the next reconnect: the lock was held and the
+driver napped anyway (iw dev wlan0 get power_save: on).
+
+Restore power save only when no high-perf lock is in force.
+
+Change-Id: I6d1e8b3f0a4c7925e8b1d6f3a0c4e7b2d9f5a813
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ service/java/com/android/server/wifi/ClientModeImpl.java | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/service/java/com/android/server/wifi/ClientModeImpl.java b/service/java/com/android/server/wifi/ClientModeImpl.java
+index 14866c8..c3e126c 100644
+--- a/service/java/com/android/server/wifi/ClientModeImpl.java
++++ b/service/java/com/android/server/wifi/ClientModeImpl.java
+@@ -2859,7 +2859,13 @@ public class ClientModeImpl extends StateMachine {
+     void handlePostDhcpSetup() {
+         /* Restore power save and suspend optimizations */
+         setSuspendOptimizationsNative(SUSPEND_DUE_TO_DHCP, true);
+-        setPowerSave(true);
++        // Not while a high-perf WifiLock holds power save off: WifiLockManager
++        // only switches it when its mode changes, so after a DHCP renewal it
++        // would stay on for as long as the lock is held.
++        if (mWifiInjector.getWifiLockManager().getStrongestLockMode()
++                != WifiManager.WIFI_MODE_FULL_HIGH_PERF) {
++            setPowerSave(true);
++        }
+ 
+         p2pSendMessage(WifiP2pServiceImpl.BLOCK_DISCOVERY, WifiP2pServiceImpl.DISABLED);
+ 
+-- 
+2.53.0
+
