@@ -126,6 +126,43 @@ addon.d re-patches the new boot image, and then waits (at most 120 s) for
 addon.d jobs that continue in the background, as Magisk's does: once the
 install reports success, the boot image is final.
 
+### Updating from Android
+
+TWRP runs an OpenRecoveryScript, so a build that is already installed can
+be updated from Android, over Wi-Fi or USB: `tools/biscuit-ota.sh` pushes
+the zip over adb, checks its SHA-256 on the device, writes
+`install /sdcard/update.zip` to `/cache/recovery/openrecoveryscript` and
+reboots into recovery. TWRP installs it to the current slot, deletes the
+zip (`cmd rm`) and reboots; the other slot keeps the previous build.
+
+```sh
+tools/biscuit-ota.sh 192.168.1.50 lineage-18.1-*-biscuit.zip   # Wi-Fi
+tools/biscuit-ota.sh usb lineage-18.1-*-biscuit.zip            # USB
+```
+
+With several USB devices attached, `SERIAL=<serial>` picks one. If the Dot
+is already in TWRP (USB only: TWRP has no Wi-Fi), the script installs the
+zip right away with `twrp install` and reboots into Android; if TWRP
+reports an error, the Dot stays in TWRP. `-f` (or `FORCE=1`) skips the
+checks for a Biscuit and for amonet v2's TWRP, so the script also updates
+other Echo devices whose TWRP runs an OpenRecoveryScript; the zip's updater
+still decides whether it installs.
+
+`-s <a|b>` (or `SLOT=`) installs into that slot instead, over Wi-Fi or
+USB. The script prints the current slot and asks before reinstalling into
+it. TWRP links `/dev/block/current-boot` and `current-system` to the slot
+it booted on, so it has to boot on the wanted slot first:
+
+- Over USB, the script sets the slot active with `bcbtool` in TWRP,
+  reboots into recovery and checks the links before installing. If the
+  install fails after a switch, it prints the `bcbtool set_active` command
+  that returns to the old slot.
+- Over Wi-Fi, it queues two OpenRecoveryScripts: the first sets the slot
+  active and reboots into recovery, the second checks that TWRP runs on
+  that slot, installs and reboots. If the Dot stays in TWRP (cyan LED),
+  connect USB, read `/tmp/recovery.log`, and
+  `adb shell bcbtool set_active <old slot>` goes back.
+
 ## How Biscuit differs from the other MT8163 Echo devices
 
 - **Kernel** (`kernel/amazon/biscuit`, branch `lineage-18.1`): the
