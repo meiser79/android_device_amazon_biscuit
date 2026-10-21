@@ -1,0 +1,59 @@
+From f78fbb7e734594fd5f918e3c4e3dd8456a8a40ab Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Wed, 21 Oct 2026 08:01:18 +0200
+Subject: [PATCH] init: Drop the skip_initramfs parameter
+
+skip_initramfs is AOSP's switch for legacy system-as-root on A/B
+devices, where the bootloader passes it to boot the system partition
+instead of boot.img's ramdisk. None of the MT8163 devices built from
+this kernel is A/B or system-as-root: all boot LineageOS from the boot
+image's ramdisk, so a bootloader that passed it would leave them
+unbootable.
+
+The string can still do harm. When Magisk takes a device for legacy
+system-as-root (on Biscuit, because amonet's TWRP has /system_root), it
+hex-patches skip_initramfs into want_initramfs in the kernel image,
+which means decompressing, patching and recompressing it; on Biscuit's
+3.18 zImage the repacked kernel never started. Without the string,
+Magisk keeps the kernel as built and patches only the ramdisk.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ init/initramfs.c | 17 -----------------
+ 1 file changed, 17 deletions(-)
+
+diff --git a/init/initramfs.c b/init/initramfs.c
+index bf3af10c..e7158802 100644
+--- a/init/initramfs.c
++++ b/init/initramfs.c
+@@ -607,27 +607,10 @@ static void __init clean_rootfs(void)
+ }
+ #endif
+ 
+-static int __initdata do_skip_initramfs;
+-
+-static int __init skip_initramfs_param(char *str)
+-{
+-	if (*str)
+-		return 0;
+-	do_skip_initramfs = 1;
+-	return 1;
+-}
+-__setup("skip_initramfs", skip_initramfs_param);
+-
+ static int __init populate_rootfs(void)
+ {
+ 	char *err;
+ 
+-	if (do_skip_initramfs) {
+-		if (initrd_start)
+-			free_initrd();
+-		return default_rootfs();
+-	}
+-
+ 	err = unpack_to_rootfs(__initramfs_start, __initramfs_size);
+ 	if (err)
+ 		panic("%s", err); /* Failed to decompress INTERNAL initramfs */
+-- 
+2.53.0
+
