@@ -1,0 +1,55 @@
+From b66537cc2cc5776ab446c6687a0fd64305631c02 Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Thu, 22 Oct 2026 10:11:49 +0200
+Subject: [PATCH] mt8163: audio: Add the WebRTC AGC to mic captures
+
+The HAL moves mic and camcorder captures to Amazon's ASR path, which
+runs AEC and the beamformer but leaves gain control to the consumer.
+Apply AOSP's AGC from libaudiopreprocessing, which mt8163.mk already
+builds, to the mic and voice_recognition sources, as Biscuit does.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ configs/audio/audio_effects.xml | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/configs/audio/audio_effects.xml b/configs/audio/audio_effects.xml
+index 3f85052..b7cd20c 100644
+--- a/configs/audio/audio_effects.xml
++++ b/configs/audio/audio_effects.xml
+@@ -21,6 +21,7 @@
+         <library name="downmix" path="libdownmix.so"/>
+         <library name="loudness_enhancer" path="libldnhncr.so"/>
+         <library name="dynamics_processing" path="libdynproc.so"/>
++        <library name="pre_processing" path="libaudiopreprocessing.so"/>
+     </libraries>
+ 
+     <!-- list of effects to load.
+@@ -58,6 +59,7 @@
+         <effect name="downmix" library="downmix" uuid="93f04452-e4fe-41cc-91f9-e475b6d1d69f"/>
+         <effect name="loudness_enhancer" library="loudness_enhancer" uuid="fa415329-2034-4bea-b5dc-5b381c8d1e2c"/>
+         <effect name="dynamics_processing" library="dynamics_processing" uuid="e0e6539b-1781-7261-676f-6d7573696340"/>
++        <effect name="agc" library="pre_processing" uuid="aa8130e0-66fc-11e0-bad0-0002a5d5c51b"/>
+     </effects>
+ 
+     <!-- Audio pre processor configurations.
+@@ -77,6 +79,16 @@
+         </preprocess>
+     -->
+ 
++    <!-- Amazon's ASR path, which the HAL uses for mic captures, has no AGC. -->
++    <preprocess>
++        <stream type="mic">
++            <apply effect="agc"/>
++        </stream>
++        <stream type="voice_recognition">
++            <apply effect="agc"/>
++        </stream>
++    </preprocess>
++
+     <!-- Audio post processor configurations.
+          The post processor configuration is described in a "postprocess" element and consists in a
+          list of elements each describing post processor settings for a given use case or "stream".
+-- 
+2.53.0
+

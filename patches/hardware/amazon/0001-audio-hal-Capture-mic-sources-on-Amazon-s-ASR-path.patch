@@ -1,0 +1,79 @@
+From 9f726ff7e32183aa708390d45838b5233def0dff Mon Sep 17 00:00:00 2001
+From: Peter Meiser <peter.meiser@gmx.com>
+Date: Thu, 22 Oct 2026 10:04:04 +0200
+Subject: [PATCH] audio: hal: Capture mic sources on Amazon's ASR path
+
+Mic and camcorder captures moved to the voice pipeline, which FireOS
+uses for calls: AEC, NR and AGC, but no beamformer. The ASR pipeline,
+which FireOS uses for Alexa, runs AEC and the fixed beamformer over all
+calibrated mics with beam selection, and leaves NR and AGC to the
+consumer, which suits wake word and speech recognition apps far better.
+
+Move them to VOICE_RECOGNITION by default. persist.vendor.amazon.mic_source
+picks another source: 7 for the voice pipeline as before, -1 to keep the
+app's source. amazon_noise_suppression=off still turns the remap off.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+---
+ audio/hal/asp.cpp | 16 ++++++++++++++--
+ audio/hal/asp.h   |  1 +
+ 2 files changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/audio/hal/asp.cpp b/audio/hal/asp.cpp
+index 5039197..4230e76 100644
+--- a/audio/hal/asp.cpp
++++ b/audio/hal/asp.cpp
+@@ -9,6 +9,7 @@
+ 
+ #include <atomic>
+ 
++#include <cutils/properties.h>
+ #include <cutils/str_parms.h>
+ 
+ #include "asp.h"
+@@ -52,17 +53,28 @@ void asp_set_parameters(const char* kv_pairs) {
+ 
+ /*
+  * The HAL only runs Amazon's capture processing for voice sources, there is
+- * no pipeline for plain mic captures. Use the voice one, it has AGC and NR.
++ * no pipeline for plain mic captures. Use the ASR one by default, which FireOS
++ * uses for Alexa: the beamformer and AEC, but no NR or AGC. The property picks
++ * another source, such as 7 for the voice one (AEC, NR and AGC, but no
++ * beamformer); -1 keeps the source.
+  */
+ audio_source_t remap_input_source(audio_source_t source) {
++    int target;
++
+     if (!noise_suppression || !get_asp_command())
+         return source;
+ 
+     switch (source) {
+         case AUDIO_SOURCE_MIC:
+         case AUDIO_SOURCE_CAMCORDER:
+-            return AUDIO_SOURCE_VOICE_COMMUNICATION;
++            break;
+         default:
+             return source;
+     }
++
++    target = property_get_int32(ASP_PROPERTY_MIC_SOURCE, AUDIO_SOURCE_VOICE_RECOGNITION);
++    if (target <= AUDIO_SOURCE_DEFAULT || target >= AUDIO_SOURCE_CNT)
++        return source;
++
++    return static_cast<audio_source_t>(target);
+ }
+diff --git a/audio/hal/asp.h b/audio/hal/asp.h
+index 078f75a..222bece 100644
+--- a/audio/hal/asp.h
++++ b/audio/hal/asp.h
+@@ -14,6 +14,7 @@
+ #define ASP_VOLUME_MAX 30
+ 
+ #define ASP_PARAMETER_NOISE_SUPPRESSION "amazon_noise_suppression"
++#define ASP_PROPERTY_MIC_SOURCE "persist.vendor.amazon.mic_source"
+ 
+ int asp_send_command(int code, int value);
+ void asp_set_parameters(const char* kv_pairs);
+-- 
+2.53.0
+
