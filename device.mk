@@ -103,11 +103,13 @@ PRODUCT_PACKAGES += \
     mt66xx_common \
     mt66xx_wlan
 
-# Overlays (Bluetooth: A2DP sink speaker, no source/PAN)
+# Overlays (Bluetooth: A2DP sink speaker, no source/PAN; SettingsProvider:
+# stay awake on AC power)
 DEVICE_PACKAGE_OVERLAYS += \
     $(LOCAL_PATH)/overlay
 
 PRODUCT_ENFORCE_RRO_EXCLUDED_OVERLAYS += \
+    $(LOCAL_PATH)/overlay/frameworks/base/packages/SettingsProvider \
     $(LOCAL_PATH)/overlay/packages/apps/Bluetooth
 
 # Screen
