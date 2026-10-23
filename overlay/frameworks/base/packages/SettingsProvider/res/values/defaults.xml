@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    SPDX-FileCopyrightText: 2026 The LineageOS Project
+    SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- Stay awake on AC power, which the Dot always reports: a suspended
+         Dot hears nothing, and the 4.9 kernel does not resume from suspend -->
+    <bool name="def_stay_on_while_plugged_in">true</bool>
+</resources>
